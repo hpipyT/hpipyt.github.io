@@ -7,6 +7,8 @@
 		--bg: #f4f1ea;
 		--ink: #1f2937;
 		--accent: #c2410c;
+		--surface: #fff;
+		--muted: #4b5563;
 	}
 
 	* {
@@ -19,6 +21,7 @@
 		color: var(--ink);
 		background: var(--bg);
 		line-height: 1.6;
+		overflow-x: hidden;
 	}
 
 	.hero {
@@ -43,111 +46,39 @@
 	}
 
 	.parallax {
-		min-height: 65vh;
-		background-image: url("https://picsum.photos/1600/900?grayscale");
+		position: relative;
+		min-height: 76vh;
+		background-image: linear-gradient(130deg, rgb(31 41 55 / 0.8), rgb(146 64 14 / 0.7)), url("https://picsum.photos/1600/900?grayscale");
 		background-attachment: fixed;
 		background-position: center;
 		background-repeat: no-repeat;
 		background-size: cover;
 		display: grid;
 		place-items: center;
+		padding: 1.5rem clamp(2.8rem, 8vw, 5.5rem);
 	}
 
-	.parallax-badge {
-		background: rgb(0 0 0 / 0.55);
-		color: #fff;
-		padding: 0.75rem 1rem;
-		border-radius: 0.5rem;
-		font-weight: 600;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-	}
-
-	.content {
-		min-height: 60vh;
-		padding: 2.5rem 1.25rem 3rem;
-		display: grid;
-		place-items: center;
-	}
-
-	.content-shell {
-		width: min(1100px, 96vw);
-		display: grid;
-		grid-template-columns: minmax(220px, 320px) 1fr;
-		gap: 1.25rem;
-		align-items: stretch;
-	}
-
-	.repo-panel,
-	.video-panel {
-		background: #fff;
-		border-radius: 0.75rem;
+	.parallax-stage {
+		width: min(1080px, 100%);
+		background: rgb(15 23 42 / 0.62);
+		border: 1px solid rgb(255 255 255 / 0.18);
+		border-radius: 0.85rem;
 		padding: 1rem;
-		box-shadow: 0 10px 30px rgb(0 0 0 / 0.08);
+		backdrop-filter: blur(4px);
+		box-shadow: 0 18px 44px rgb(0 0 0 / 0.3);
 	}
 
-	.repo-panel h2,
-	.video-panel h2 {
-		margin: 0 0 0.35rem;
-		font-size: 1.1rem;
-	}
-
-	.repo-panel p,
-	.video-panel p {
-		margin: 0 0 0.85rem;
-		font-size: 0.95rem;
-		color: #4b5563;
-	}
-
-	.repo-stack {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: grid;
-		gap: 0.65rem;
-	}
-
-	.repo-card {
-		border: 1px solid #e5e7eb;
-		border-left: 4px solid transparent;
-		border-radius: 0.55rem;
-		padding: 0.75rem;
-		background: #fffdf7;
-		transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-	}
-
-	.repo-card h3 {
-		margin: 0;
-		font-size: 0.98rem;
-	}
-
-	.repo-card .repo-desc {
-		margin-top: 0.35rem;
-		font-size: 0.85rem;
-		color: #6b7280;
-	}
-
-	.repo-card .repo-link {
-		display: inline-block;
-		margin-top: 0.45rem;
-		font-size: 0.85rem;
-		color: #9a3412;
-		text-decoration: none;
-		font-weight: 600;
-	}
-
-	.repo-card.active {
-		border-left-color: var(--accent);
-		border-color: #fdba74;
-		box-shadow: 0 6px 18px rgb(194 65 12 / 0.14);
-		transform: translateX(2px);
+	.video-title {
+		margin: 0 0 0.55rem;
+		color: #fff;
+		font-size: clamp(1rem, 1.8vw, 1.35rem);
 	}
 
 	.video-wrap {
 		position: relative;
 		width: 100%;
 		padding-top: 56.25%;
-		border-radius: 0.65rem;
+		border-radius: 0.7rem;
 		overflow: hidden;
 		background: #111827;
 	}
@@ -160,42 +91,133 @@
 		border: 0;
 	}
 
-	.controls {
-		display: flex;
-		gap: 0.6rem;
-		margin-top: 0.9rem;
-	}
-
-	.controls button {
+	.side-arrow {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 2.7rem;
+		height: 2.7rem;
 		border: 0;
 		border-radius: 999px;
-		padding: 0.55rem 1rem;
+		background: rgb(255 247 237 / 0.92);
+		color: #7c2d12;
+		font-size: 1.4rem;
+		line-height: 1;
+		cursor: pointer;
+		box-shadow: 0 6px 16px rgb(0 0 0 / 0.22);
+		transition: transform 140ms ease, background-color 140ms ease;
+		z-index: 2;
+	}
+
+	.side-arrow:hover {
+		background: #fdba74;
+		transform: translateY(-50%) scale(1.04);
+	}
+
+	.side-arrow.left {
+		left: 0.9rem;
+	}
+
+	.side-arrow.right {
+		right: 0.9rem;
+	}
+
+	.content {
+		min-height: 45vh;
+		padding: 2rem 1.25rem 3rem;
+		display: grid;
+		place-items: center;
+	}
+
+	.content-shell {
+		width: min(1080px, 96vw);
+		background: var(--surface);
+		border-radius: 0.85rem;
+		padding: 1.2rem;
+		box-shadow: 0 10px 30px rgb(0 0 0 / 0.08);
+	}
+
+	.content-shell h2 {
+		margin: 0;
+		font-size: 1.2rem;
+	}
+
+	.content-shell p {
+		margin: 0.35rem 0 1rem;
+		color: var(--muted);
+		font-size: 0.95rem;
+	}
+
+	.repo-carousel {
+		display: flex;
+		gap: 0.55rem;
+		overflow-x: auto;
+		padding-bottom: 0.35rem;
+		scrollbar-width: thin;
+	}
+
+	.repo-button {
+		border: 1px solid #fdba74;
+		background: #fff7ed;
+		color: #9a3412;
+		border-radius: 999px;
+		padding: 0.45rem 0.85rem;
+		font-size: 0.86rem;
 		font-weight: 600;
 		cursor: pointer;
-		background: #fed7aa;
-		color: #7c2d12;
-		transition: transform 140ms ease, background-color 140ms ease;
+		white-space: nowrap;
 	}
 
-	.controls button:hover {
+	.repo-button.active {
 		background: #fdba74;
-		transform: translateY(-1px);
+		color: #7c2d12;
 	}
 
-	#videoCaption {
-		margin-top: 0.65rem;
-		font-size: 0.92rem;
+	.repo-meta {
+		margin-top: 1rem;
+		font-weight: 700;
+		font-size: 1rem;
+	}
+
+	.repo-link {
+		display: inline-block;
+		margin-top: 0.35rem;
+		text-decoration: none;
+		color: #9a3412;
 		font-weight: 600;
-		color: #374151;
+	}
+
+	.readme {
+		margin-top: 0.9rem;
+		padding: 1rem;
+		border-radius: 0.7rem;
+		background: #fffdf7;
+		border: 1px solid #f3e8d4;
+		max-height: 38vh;
+		overflow: auto;
+		white-space: pre-wrap;
+		font-size: 0.92rem;
+	}
+
+	.readme.loading {
+		color: #6b7280;
+		font-style: italic;
 	}
 
 	@media (max-width: 900px) {
 		.parallax {
 			background-attachment: scroll;
+			padding: 1.25rem 1rem 1.5rem;
 		}
 
-		.content-shell {
-			grid-template-columns: 1fr;
+		.side-arrow {
+			top: auto;
+			bottom: 0.7rem;
+			transform: none;
+		}
+
+		.side-arrow:hover {
+			transform: scale(1.04);
 		}
 	}
 </style>
@@ -208,122 +230,181 @@
 		</div>
 	</section>
 
-	<section class="parallax" aria-label="Parallax background image">
-		<div class="parallax-badge">Placeholder Background</div>
+	<section id="videoParallax" class="parallax" aria-label="Parallax video section">
+		<button id="prevBtn" class="side-arrow left" type="button" aria-label="Previous repository">&#8249;</button>
+		<div class="parallax-stage">
+			<h2 id="videoTitle" class="video-title">Loading repositories...</h2>
+			<div class="video-wrap">
+				<iframe
+					id="videoPlayer"
+					src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+					title="Project video"
+					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+					allowfullscreen
+				></iframe>
+			</div>
+		</div>
+		<button id="nextBtn" class="side-arrow right" type="button" aria-label="Next repository">&#8250;</button>
 	</section>
 
 	<section class="content">
 		<div class="content-shell">
-			<aside class="repo-panel" aria-label="Repository stack">
-				<h2>Featured Repositories</h2>
-				<p>Live repos from hpipyT. Carousel rotates this 3-item stack.</p>
-				<ul id="repoStack" class="repo-stack"></ul>
-			</aside>
-
-			<article class="video-panel">
-				<h2>Project Video Showcase</h2>
-				<p>Use the carousel controls to switch the embedded YouTube video.</p>
-				<div class="video-wrap">
-					<iframe
-						id="videoPlayer"
-						src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-						title="Project video"
-						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-						allowfullscreen
-					></iframe>
-				</div>
-				<div class="controls">
-					<button id="prevBtn" type="button" aria-label="Previous video">Previous</button>
-					<button id="nextBtn" type="button" aria-label="Next video">Next</button>
-				</div>
-				<div id="videoCaption" aria-live="polite"></div>
-			</article>
+			<h2>Repository Video Carousel</h2>
+			<p>Select any repository button to switch video and load README text.</p>
+			<div id="repoCarousel" class="repo-carousel" aria-label="Repository buttons"></div>
+			<div id="repoMeta" class="repo-meta" aria-live="polite"></div>
+			<a id="repoLink" class="repo-link" href="#" target="_blank" rel="noopener noreferrer">Open repository</a>
+			<div id="readmeText" class="readme loading">Loading README...</div>
 		</div>
 	</section>
 
 	<script>
-		const githubUser = "hpipyT";
+		const candidateUsers = ["hpipyT", "Hpipyt", "hpipy"];
 		const fallbackEmbedIds = ["dQw4w9WgXcQ", "ysz5S6PUM-U", "tgbNymZ7vqY"];
-		const repoVideoOverrides = {
-			"hpipyt.github.io": "dQw4w9WgXcQ",
-			"runescape-burglar": "ysz5S6PUM-U",
-			"LAMP-stack-app-COP4331": "tgbNymZ7vqY"
-		};
 
-		const repoStack = document.getElementById("repoStack");
+		const parallaxSection = document.getElementById("videoParallax");
+		const videoTitle = document.getElementById("videoTitle");
 		const videoPlayer = document.getElementById("videoPlayer");
-		const videoCaption = document.getElementById("videoCaption");
+		const repoCarousel = document.getElementById("repoCarousel");
+		const repoMeta = document.getElementById("repoMeta");
+		const repoLink = document.getElementById("repoLink");
+		const readmeText = document.getElementById("readmeText");
 		const prevBtn = document.getElementById("prevBtn");
 		const nextBtn = document.getElementById("nextBtn");
 
+		const readmeCache = new Map();
+		const videoCache = new Map();
 		let current = 0;
+		let githubUser = "hpipyT";
 		let repoVideos = [];
+		let autoSnapCooldown = false;
+		let lastScrollY = window.scrollY;
 
 		function normalizeIndex(index) {
 			const total = repoVideos.length;
 			return (index + total) % total;
 		}
 
-		function getStackIndices(centerIndex) {
-			return [
-				normalizeIndex(centerIndex),
-				normalizeIndex(centerIndex + 1),
-				normalizeIndex(centerIndex + 2)
-			];
-		}
-
 		function embedFromVideoId(videoId) {
 			return `https://www.youtube.com/embed/${videoId}`;
 		}
 
-		function fallbackData() {
-			repoVideos = [
-				{
-					name: "hpipyt.github.io",
-					description: "GitHub Pages site repository",
-					repoUrl: "https://github.com/hpipyT/hpipyt.github.io",
-					youtubeEmbed: embedFromVideoId(fallbackEmbedIds[0])
-				},
-				{
-					name: "runescape-burglar",
-					description: "Project repository",
-					repoUrl: "https://github.com/hpipyT/runescape-burglar",
-					youtubeEmbed: embedFromVideoId(fallbackEmbedIds[1])
-				},
-				{
-					name: "LAMP-stack-app-COP4331",
-					description: "Project repository",
-					repoUrl: "https://github.com/hpipyT/LAMP-stack-app-COP4331",
-					youtubeEmbed: embedFromVideoId(fallbackEmbedIds[2])
-				}
-			];
+		function escapeHtml(text) {
+			const span = document.createElement("span");
+			span.textContent = text;
+			return span.innerHTML;
 		}
 
-		function render() {
+		function extractYoutubeId(url) {
+			if (!url) {
+				return null;
+			}
+
+			try {
+				const parsed = new URL(url);
+				const host = parsed.hostname.replace("www.", "").toLowerCase();
+
+				if (host === "youtu.be") {
+					return parsed.pathname.slice(1) || null;
+				}
+
+				if (host === "youtube.com" || host === "m.youtube.com") {
+					if (parsed.pathname === "/watch") {
+						return parsed.searchParams.get("v");
+					}
+					if (parsed.pathname.startsWith("/embed/")) {
+						return parsed.pathname.split("/")[2] || null;
+					}
+				}
+			} catch (error) {
+				return null;
+			}
+
+			return null;
+		}
+
+		function decodeBase64Utf8(base64Value) {
+			const raw = atob(base64Value);
+			const bytes = Uint8Array.from(raw, (char) => char.charCodeAt(0));
+			return new TextDecoder("utf-8").decode(bytes);
+		}
+
+		function updateButtonState() {
+			const buttons = repoCarousel.querySelectorAll(".repo-button");
+			buttons.forEach((button, index) => {
+				button.classList.toggle("active", index === current);
+			});
+		}
+
+		async function getReadme(repo) {
+			const key = `${repo.owner}/${repo.name}`;
+			if (readmeCache.has(key)) {
+				return readmeCache.get(key);
+			}
+
+			try {
+				const response = await fetch(`https://api.github.com/repos/${repo.owner}/${repo.name}/readme`);
+				if (!response.ok) {
+					throw new Error("README not found");
+				}
+
+				const payload = await response.json();
+				const content = payload.content ? decodeBase64Utf8(payload.content.replace(/\n/g, "")) : "README unavailable.";
+				readmeCache.set(key, content);
+				return content;
+			} catch (error) {
+				const fallback = "README not available for this repository.";
+				readmeCache.set(key, fallback);
+				return fallback;
+			}
+		}
+
+		async function resolveVideoEmbed(repo, index) {
+			const key = `${repo.owner}/${repo.name}`;
+			if (videoCache.has(key)) {
+				return videoCache.get(key);
+			}
+
+			const homepageId = extractYoutubeId(repo.homepage || "");
+			if (homepageId) {
+				const homepageEmbed = embedFromVideoId(homepageId);
+				videoCache.set(key, homepageEmbed);
+				return homepageEmbed;
+			}
+
+			const readme = await getReadme(repo);
+			const match = readme.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=[^\s)\]]+|youtu\.be\/[^\s)\]]+|youtube\.com\/embed\/[^\s)\]]+)/i);
+			const readmeId = match ? extractYoutubeId(match[0]) : null;
+			const embed = readmeId
+				? embedFromVideoId(readmeId)
+				: embedFromVideoId(fallbackEmbedIds[index % fallbackEmbedIds.length]);
+			videoCache.set(key, embed);
+			return embed;
+		}
+
+		async function render() {
 			if (!repoVideos.length) {
 				return;
 			}
 
 			const active = repoVideos[current];
-			videoPlayer.src = active.youtubeEmbed;
+			videoTitle.textContent = active.name;
+			repoMeta.textContent = active.description || "No repository description available.";
+			repoLink.href = active.repoUrl;
+			repoLink.textContent = `Open ${active.name} on GitHub`;
+
+			updateButtonState();
+
+			readmeText.classList.add("loading");
+			readmeText.textContent = "Loading README...";
+
+			const embed = await resolveVideoEmbed(active, current);
+			videoPlayer.src = embed;
 			videoPlayer.title = `${active.name} video`;
-			videoCaption.textContent = `${active.name} - ${active.description}`;
 
-			const stack = getStackIndices(current)
-				.map((i, order) => {
-					const item = repoVideos[i];
-					const isActive = order === 0;
-					return `
-						<li class="repo-card${isActive ? " active" : ""}">
-							<h3>${item.name}</h3>
-							<div class="repo-desc">${item.description}</div>
-							<a class="repo-link" href="${item.repoUrl}" target="_blank" rel="noopener noreferrer">Open Repository</a>
-						</li>
-					`;
-				})
-				.join("");
-
-			repoStack.innerHTML = stack;
+			const readme = await getReadme(active);
+			readmeText.classList.remove("loading");
+			readmeText.innerHTML = escapeHtml(readme);
 		}
 
 		function move(step) {
@@ -334,43 +415,89 @@
 			render();
 		}
 
-		async function loadRepos() {
-			try {
-				const response = await fetch(`https://api.github.com/users/${githubUser}/repos?sort=updated&per_page=50`);
-				if (!response.ok) {
-					throw new Error("Failed to load repositories");
-				}
+		function snapToParallaxOnThreshold() {
+			const currentY = window.scrollY;
+			const scrollingDown = currentY > lastScrollY;
+			lastScrollY = currentY;
 
-				const repos = await response.json();
-				const topRepos = repos
-					.filter((repo) => !repo.fork)
-					.slice(0, 3);
-
-				if (topRepos.length < 3) {
-					fallbackData();
-					render();
-					return;
-				}
-
-				repoVideos = topRepos.map((repo, index) => {
-					const override = repoVideoOverrides[repo.name];
-					const videoId = override || fallbackEmbedIds[index % fallbackEmbedIds.length];
-					return {
-						name: repo.name,
-						description: repo.description || "Repository from GitHub profile",
-						repoUrl: repo.html_url,
-						youtubeEmbed: embedFromVideoId(videoId)
-					};
-				});
-			} catch (error) {
-				fallbackData();
+			if (!scrollingDown || autoSnapCooldown) {
+				return;
 			}
 
+			const rect = parallaxSection.getBoundingClientRect();
+			const inThreshold = rect.top <= window.innerHeight * 0.34 && rect.top >= -window.innerHeight * 0.2;
+			if (inThreshold) {
+				autoSnapCooldown = true;
+				parallaxSection.scrollIntoView({ behavior: "smooth", block: "start" });
+				setTimeout(() => {
+					autoSnapCooldown = false;
+				}, 900);
+			}
+		}
+
+		function renderButtons() {
+			repoCarousel.innerHTML = repoVideos
+				.map((repo, index) => `<button class="repo-button${index === current ? " active" : ""}" data-index="${index}" type="button">${repo.name}</button>`)
+				.join("");
+
+			repoCarousel.querySelectorAll(".repo-button").forEach((button) => {
+				button.addEventListener("click", () => {
+					current = Number(button.dataset.index);
+					render();
+				});
+			});
+		}
+
+		async function fetchReposForUser(user) {
+			const response = await fetch(`https://api.github.com/users/${user}/repos?sort=updated&per_page=100`);
+			if (!response.ok) {
+				throw new Error("Unable to load repositories for user");
+			}
+			const repos = await response.json();
+			return repos
+				.filter((repo) => !repo.archived)
+				.map((repo) => ({
+					owner: repo.owner.login,
+					name: repo.name,
+					description: repo.description || "No repository description available.",
+					repoUrl: repo.html_url,
+					homepage: repo.homepage || ""
+				}));
+		}
+
+		async function loadRepos() {
+			for (const user of candidateUsers) {
+				try {
+					const repos = await fetchReposForUser(user);
+					if (repos.length) {
+						githubUser = user;
+						repoVideos = repos;
+						break;
+					}
+				} catch (error) {
+					continue;
+				}
+			}
+
+			if (!repoVideos.length) {
+				repoVideos = [
+					{
+						owner: "hpipyT",
+						name: "hpipyt.github.io",
+						description: "Fallback repository entry.",
+						repoUrl: "https://github.com/hpipyT/hpipyt.github.io",
+						homepage: ""
+					}
+				];
+			}
+
+			renderButtons();
 			render();
 		}
 
 		prevBtn.addEventListener("click", () => move(-1));
 		nextBtn.addEventListener("click", () => move(1));
+		window.addEventListener("scroll", snapToParallaxOnThreshold, { passive: true });
 
 		loadRepos();
 	</script>
