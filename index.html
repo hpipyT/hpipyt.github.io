@@ -26,7 +26,7 @@
 	}
 
 	.hero {
-		min-height: 66.67vh;
+		min-height: 100vh;
 		display: grid;
 		place-items: center;
 		padding: 2rem;
@@ -74,6 +74,7 @@
 	.parallax {
 		position: relative;
 		min-height: 72vh;
+		--parallax-shift: 0;
 		transition: min-height var(--slide-speed-ms) ease;
 		background-attachment: fixed;
 		display: grid;
@@ -101,7 +102,7 @@
 		border: 0;
 		pointer-events: none;
 		filter: saturate(0.82) brightness(0.52) contrast(1.06);
-		transform: scale(1.12);
+		transform: translateY(calc(var(--parallax-shift) * 1px)) scale(1.12);
 	}
 
 	.parallax-fade {
@@ -249,14 +250,12 @@
 	}
 
 	.repo-button.active {
-		flex: 12 1 0;
 		background: #fdba74;
 		color: #7c2d12;
 		font-weight: 700;
 	}
 
 	.repo-button.hovered {
-		flex: 6 1 0;
 		justify-content: flex-start;
 		padding-left: 0.8rem;
 		background: #fed7aa;
@@ -345,9 +344,7 @@
 		</div>
 		<div class="parallax-fade" aria-hidden="true"></div>
 		<button id="prevBtn" class="side-arrow left" type="button" aria-label="Previous repository">&#8249;</button>
-		<div id="playerPanel" class="parallax-stage">
-			<h2 id="videoTitle" class="video-title">Loading repositories...</h2>
-		</div>
+		<div id="playerPanel" class="parallax-stage" aria-hidden="true"></div>
 		<div id="repoCarousel" class="repo-carousel" aria-label="Repository buttons"></div>
 		<button id="nextBtn" class="side-arrow right" type="button" aria-label="Next repository">&#8250;</button>
 	</section>
@@ -370,7 +367,6 @@
 
 		const parallaxSection = document.getElementById("videoParallax");
 		const playerPanel = document.getElementById("playerPanel");
-		const videoTitle = document.getElementById("videoTitle");
 		const videoPlayer = document.getElementById("videoPlayer");
 		const repoCarousel = document.getElementById("repoCarousel");
 		const repoMeta = document.getElementById("repoMeta");
@@ -396,6 +392,9 @@
 		const tessellationPieces = [];
 		let tessellationBuildToken = 0;
 		let activeEmbedBase = "https://www.youtube.com/embed/dQw4w9WgXcQ";
+		const ACTIVE_WIDTH = 12;
+		const COLLAPSED_WIDTH = 0.35;
+		const SHRUNK_ACTIVE_WIDTH = ACTIVE_WIDTH * 0.5;
 
 		function normalizeIndex(index) {
 			const total = repoVideos.length;
@@ -463,6 +462,18 @@
 			buttons.forEach((button, index) => {
 				button.classList.toggle("active", index === current);
 				button.classList.toggle("hovered", index === hoveredIndex && hoveredIndex !== current);
+
+				let width = COLLAPSED_WIDTH;
+				if (hoveredIndex !== -1 && hoveredIndex !== current) {
+					if (index === hoveredIndex) {
+						width = ACTIVE_WIDTH;
+					} else if (index === current) {
+						width = SHRUNK_ACTIVE_WIDTH;
+					}
+				} else if (index === current) {
+					width = ACTIVE_WIDTH;
+				}
+				button.style.flex = `${width} 1 0`;
 			});
 		}
 
@@ -601,7 +612,6 @@
 			const token = ++renderToken;
 
 			const active = repoVideos[current];
-			videoTitle.textContent = active.name;
 			repoMeta.textContent = active.description || "No repository description available.";
 			repoLink.href = active.repoUrl;
 			repoLink.textContent = `Open ${active.name} on GitHub`;
@@ -647,17 +657,11 @@
 				return;
 			}
 
-			const stage = parallaxSection.querySelector(".parallax-stage");
-			if (!stage) {
-				return;
-			}
-
 			const rect = parallaxSection.getBoundingClientRect();
 			const inThreshold = rect.top <= window.innerHeight * 0.72 && rect.top >= window.innerHeight * 0.46;
 			if (inThreshold) {
 				autoSnapCooldown = true;
-				const stageRect = stage.getBoundingClientRect();
-				const absoluteStageCenter = window.scrollY + stageRect.top + stageRect.height / 2;
+				const absoluteStageCenter = window.scrollY + rect.top + rect.height / 2;
 				const targetY = Math.max(0, absoluteStageCenter - window.innerHeight / 2);
 				isProgrammaticScroll = true;
 				smoothScrollTo(targetY, SLIDE_SPEED_MS).then(() => {
@@ -935,18 +939,27 @@
 			tessellationPieces.forEach((piece) => {
 				const delay = (1 - piece.yNorm) * 0.58;
 				const local = clamp((progress - delay) / (1 - delay), 0, 1);
-				const lift = local * (heroSection.offsetHeight * (0.9 + piece.jitter * 0.45));
+				const drop = local * (heroSection.offsetHeight * (0.9 + piece.jitter * 0.45));
 				const sway = (piece.jitter - 0.5) * 34 * local;
 				const rotate = (piece.jitter - 0.5) * 9 * local;
-				piece.el.style.transform = `translate(${sway}px, ${-lift}px) rotate(${rotate}deg)`;
+				piece.el.style.transform = `translate(${sway}px, ${drop}px) rotate(${rotate}deg)`;
 				piece.el.style.opacity = String(1 - local * 0.92);
 			});
+		}
+
+		function updateVideoParallaxOffset() {
+			const rect = parallaxSection.getBoundingClientRect();
+			const sectionCenter = rect.top + rect.height / 2;
+			const viewportCenter = window.innerHeight / 2;
+			const shift = (sectionCenter - viewportCenter) * -0.12;
+			parallaxSection.style.setProperty("--parallax-shift", shift.toFixed(2));
 		}
 
 		function onScrollEffects() {
 			snapToParallaxOnThreshold();
 			hairlineCollapseOnScrollAway();
 			updateTessellationOnScroll();
+			updateVideoParallaxOffset();
 		}
 
 		function renderButtons() {
@@ -1064,12 +1077,14 @@
 			window.clearTimeout(resizeTimer);
 			resizeTimer = window.setTimeout(() => {
 				buildTessellationFromImage();
+				updateVideoParallaxOffset();
 			}, 120);
 		});
 
 		buildTessellationFromImage();
 		loadRepos();
 		updateTessellationOnScroll();
+		updateVideoParallaxOffset();
 	</script>
 
 </body>
