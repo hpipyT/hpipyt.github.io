@@ -32,6 +32,33 @@
 		padding: 2rem;
 		text-align: center;
 		background: linear-gradient(130deg, #fffaf0 0%, #f5d0a9 100%);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.hero-copy {
+		position: relative;
+		z-index: 2;
+	}
+
+	.tessellation-layer {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 1;
+		pointer-events: none;
+	}
+
+	.tess-row {
+		transition: transform 60ms linear, opacity 100ms linear;
+	}
+
+	.tess-tile {
+		fill: rgb(255 255 255 / 0.95);
+		stroke: rgb(0 0 0 / 0.75);
+		stroke-width: 1.35;
+		vector-effect: non-scaling-stroke;
 	}
 
 	.hero h1 {
@@ -274,34 +301,6 @@
 		font-style: italic;
 	}
 
-	.fog-layer {
-		position: fixed;
-		left: 0;
-		right: 0;
-		bottom: -20px;
-		height: 30vh;
-		pointer-events: none;
-		z-index: 4;
-		opacity: 0.85;
-		transition: opacity 220ms ease;
-		background:
-			radial-gradient(ellipse 22% 19% at 12% 82%, rgb(248 253 255 / 0.88) 0 38%, rgb(220 246 255 / 0.56) 39% 56%, transparent 57%),
-			radial-gradient(ellipse 24% 20% at 34% 87%, rgb(244 252 255 / 0.82) 0 36%, rgb(214 241 255 / 0.5) 37% 58%, transparent 59%),
-			radial-gradient(ellipse 24% 18% at 58% 85%, rgb(252 255 255 / 0.9) 0 35%, rgb(221 244 255 / 0.52) 36% 56%, transparent 57%),
-			radial-gradient(ellipse 21% 18% at 80% 80%, rgb(249 254 255 / 0.86) 0 40%, rgb(214 240 255 / 0.48) 41% 58%, transparent 59%);
-		filter: blur(10px) saturate(1.12);
-		animation: fogDrift 12s ease-in-out infinite alternate;
-	}
-
-	@keyframes fogDrift {
-		from {
-			transform: translateX(-2%) translateY(0);
-		}
-		to {
-			transform: translateX(2%) translateY(-8px);
-		}
-	}
-
 	@media (max-width: 900px) {
 		.parallax {
 			background-attachment: scroll;
@@ -329,7 +328,8 @@
 </head>
 <body>
 	<section class="hero">
-		<div>
+		<svg id="tessellationLayer" class="tessellation-layer" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true"></svg>
+		<div class="hero-copy">
 			<h1>Parallax Scroll Effect</h1>
 			<p>Scroll down to see the background move at a different pace than the content.</p>
 		</div>
@@ -364,8 +364,6 @@
 		</div>
 	</section>
 
-	<div id="fogLayer" class="fog-layer" aria-hidden="true"></div>
-
 	<script>
 		const candidateUsers = ["hpipyT", "Hpipyt", "hpipy"];
 		const fallbackEmbedIds = ["dQw4w9WgXcQ", "ysz5S6PUM-U", "tgbNymZ7vqY"];
@@ -379,7 +377,8 @@
 		const repoMeta = document.getElementById("repoMeta");
 		const repoLink = document.getElementById("repoLink");
 		const readmeText = document.getElementById("readmeText");
-		const fogLayer = document.getElementById("fogLayer");
+		const tessellationLayer = document.getElementById("tessellationLayer");
+		const heroSection = document.querySelector(".hero");
 		const prevBtn = document.getElementById("prevBtn");
 		const nextBtn = document.getElementById("nextBtn");
 
@@ -394,6 +393,8 @@
 		let isExpanded = false;
 		let isPlaying = false;
 		let expandedLockScrollY = 0;
+		let isProgrammaticScroll = false;
+		const tessellationRows = [];
 		let activeEmbedBase = "https://www.youtube.com/embed/dQw4w9WgXcQ";
 
 		function normalizeIndex(index) {
@@ -526,27 +527,35 @@
 			const startY = window.scrollY;
 			const delta = targetY - startY;
 			if (Math.abs(delta) < 2) {
-				return;
+				return Promise.resolve();
 			}
 
-			const start = performance.now();
-			function tick(now) {
-				const t = Math.min(1, (now - start) / duration);
-				const eased = 1 - Math.pow(1 - t, 3);
-				window.scrollTo(0, startY + delta * eased);
-				if (t < 1) {
-					requestAnimationFrame(tick);
+			return new Promise((resolve) => {
+				const start = performance.now();
+				function tick(now) {
+					const t = Math.min(1, (now - start) / duration);
+					const eased = 1 - Math.pow(1 - t, 3);
+					window.scrollTo(0, startY + delta * eased);
+					if (t < 1) {
+						requestAnimationFrame(tick);
+					} else {
+						resolve();
+					}
 				}
-			}
-			requestAnimationFrame(tick);
+				requestAnimationFrame(tick);
+			});
 		}
 
-		function centerPlayerInView() {
+		async function centerPlayerInView() {
 			const top = parallaxSection.offsetTop;
 			const sectionHeight = parallaxSection.offsetHeight;
 			const targetY = Math.max(0, top + sectionHeight / 2 - window.innerHeight / 2);
-			expandedLockScrollY = targetY;
-			smoothScrollTo(targetY, SLIDE_SPEED_MS);
+			isProgrammaticScroll = true;
+			await smoothScrollTo(targetY, SLIDE_SPEED_MS);
+			expandedLockScrollY = window.scrollY;
+			setTimeout(() => {
+				isProgrammaticScroll = false;
+			}, 40);
 		}
 
 		function setExpandedState(nextExpanded) {
@@ -563,11 +572,11 @@
 			setExpandedState(false);
 		}
 
-		function expandAndPlay() {
+		async function expandAndPlay() {
 			setExpandedState(true);
-			centerPlayerInView();
 			videoPlayer.src = buildEmbedUrl(activeEmbedBase, true);
 			isPlaying = true;
+			await centerPlayerInView();
 		}
 
 		function togglePlayPauseInExpanded() {
@@ -650,15 +659,16 @@
 				const stageRect = stage.getBoundingClientRect();
 				const absoluteStageCenter = window.scrollY + stageRect.top + stageRect.height / 2;
 				const targetY = Math.max(0, absoluteStageCenter - window.innerHeight / 2);
-				smoothScrollTo(targetY, SLIDE_SPEED_MS);
-				setTimeout(() => {
+				isProgrammaticScroll = true;
+				smoothScrollTo(targetY, SLIDE_SPEED_MS).then(() => {
+					isProgrammaticScroll = false;
 					autoSnapCooldown = false;
-				}, SLIDE_SPEED_MS + 140);
+				});
 			}
 		}
 
 		function hairlineCollapseOnScrollAway() {
-			if (!isExpanded) {
+			if (!isExpanded || isProgrammaticScroll) {
 				return;
 			}
 			const drift = Math.abs(window.scrollY - expandedLockScrollY);
@@ -667,16 +677,75 @@
 			}
 		}
 
-		function updateFogOpacity() {
-			const fadeDistance = window.innerHeight * 0.95;
-			const opacity = Math.max(0, 0.86 - window.scrollY / fadeDistance);
-			fogLayer.style.opacity = opacity.toFixed(3);
+		function buildTessellation() {
+			if (!tessellationLayer) {
+				return;
+			}
+
+			tessellationLayer.innerHTML = "";
+			tessellationRows.length = 0;
+
+			const rows = 10;
+			const cols = 16;
+			const width = 1200;
+			const height = 700;
+			const cellW = width / cols;
+			const cellH = height / rows;
+
+			for (let row = 0; row < rows; row += 1) {
+				const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+				g.setAttribute("class", "tess-row");
+
+				for (let col = 0; col < cols; col += 1) {
+					const x = col * cellW;
+					const y = row * cellH;
+					const flip = (row + col) % 2 === 0;
+					const p1 = flip
+						? `${x},${y} ${x + cellW},${y} ${x},${y + cellH}`
+						: `${x + cellW},${y} ${x + cellW},${y + cellH} ${x},${y}`;
+					const p2 = flip
+						? `${x + cellW},${y + cellH} ${x + cellW},${y} ${x},${y + cellH}`
+						: `${x},${y + cellH} ${x},${y} ${x + cellW},${y + cellH}`;
+
+					const polyA = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+					polyA.setAttribute("class", "tess-tile");
+					polyA.setAttribute("points", p1);
+					const polyB = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+					polyB.setAttribute("class", "tess-tile");
+					polyB.setAttribute("points", p2);
+
+					g.appendChild(polyA);
+					g.appendChild(polyB);
+				}
+
+				tessellationLayer.appendChild(g);
+				tessellationRows.push(g);
+			}
+		}
+
+		function updateTessellationOnScroll() {
+			if (!heroSection || !tessellationRows.length) {
+				return;
+			}
+
+			const rect = heroSection.getBoundingClientRect();
+			const progress = Math.max(0, Math.min(1, -rect.top / heroSection.offsetHeight));
+			const rowCount = tessellationRows.length;
+
+			tessellationRows.forEach((rowEl, rowIndex) => {
+				const bottomOrder = rowCount - 1 - rowIndex;
+				const delay = bottomOrder * 0.06;
+				const local = Math.max(0, Math.min(1, (progress - delay) / (1 - delay)));
+				const lift = local * (heroSection.offsetHeight * 1.1);
+				rowEl.style.transform = `translateY(${-lift}px)`;
+				rowEl.style.opacity = String(1 - local * 0.85);
+			});
 		}
 
 		function onScrollEffects() {
 			snapToParallaxOnThreshold();
 			hairlineCollapseOnScrollAway();
-			updateFogOpacity();
+			updateTessellationOnScroll();
 		}
 
 		function renderButtons() {
@@ -789,9 +858,11 @@
 			move(1);
 		});
 		window.addEventListener("scroll", onScrollEffects, { passive: true });
+		window.addEventListener("resize", updateTessellationOnScroll);
 
+		buildTessellation();
 		loadRepos();
-		updateFogOpacity();
+		updateTessellationOnScroll();
 	</script>
 
 </body>
