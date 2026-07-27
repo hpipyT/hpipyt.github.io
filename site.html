@@ -64,30 +64,138 @@
 	}
 
 	.content {
-		min-height: 50vh;
+		min-height: 60vh;
+		padding: 2.5rem 1.25rem 3rem;
 		display: grid;
 		place-items: center;
-		padding: 2rem;
 	}
 
-	.content article {
-		max-width: 68ch;
+	.content-shell {
+		width: min(1100px, 96vw);
+		display: grid;
+		grid-template-columns: minmax(220px, 320px) 1fr;
+		gap: 1.25rem;
+		align-items: stretch;
+	}
+
+	.repo-panel,
+	.video-panel {
 		background: #fff;
 		border-radius: 0.75rem;
-		padding: 1.5rem;
+		padding: 1rem;
 		box-shadow: 0 10px 30px rgb(0 0 0 / 0.08);
 	}
 
-	.placeholder-image {
-		margin-top: 1rem;
+	.repo-panel h2,
+	.video-panel h2 {
+		margin: 0 0 0.35rem;
+		font-size: 1.1rem;
+	}
+
+	.repo-panel p,
+	.video-panel p {
+		margin: 0 0 0.85rem;
+		font-size: 0.95rem;
+		color: #4b5563;
+	}
+
+	.repo-stack {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		gap: 0.65rem;
+	}
+
+	.repo-card {
+		border: 1px solid #e5e7eb;
+		border-left: 4px solid transparent;
+		border-radius: 0.55rem;
+		padding: 0.75rem;
+		background: #fffdf7;
+		transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+	}
+
+	.repo-card h3 {
+		margin: 0;
+		font-size: 0.98rem;
+	}
+
+	.repo-card .repo-desc {
+		margin-top: 0.35rem;
+		font-size: 0.85rem;
+		color: #6b7280;
+	}
+
+	.repo-card .repo-link {
+		display: inline-block;
+		margin-top: 0.45rem;
+		font-size: 0.85rem;
+		color: #9a3412;
+		text-decoration: none;
+		font-weight: 600;
+	}
+
+	.repo-card.active {
+		border-left-color: var(--accent);
+		border-color: #fdba74;
+		box-shadow: 0 6px 18px rgb(194 65 12 / 0.14);
+		transform: translateX(2px);
+	}
+
+	.video-wrap {
+		position: relative;
 		width: 100%;
-		border-radius: 0.5rem;
-		display: block;
+		padding-top: 56.25%;
+		border-radius: 0.65rem;
+		overflow: hidden;
+		background: #111827;
+	}
+
+	.video-wrap iframe {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		border: 0;
+	}
+
+	.controls {
+		display: flex;
+		gap: 0.6rem;
+		margin-top: 0.9rem;
+	}
+
+	.controls button {
+		border: 0;
+		border-radius: 999px;
+		padding: 0.55rem 1rem;
+		font-weight: 600;
+		cursor: pointer;
+		background: #fed7aa;
+		color: #7c2d12;
+		transition: transform 140ms ease, background-color 140ms ease;
+	}
+
+	.controls button:hover {
+		background: #fdba74;
+		transform: translateY(-1px);
+	}
+
+	#videoCaption {
+		margin-top: 0.65rem;
+		font-size: 0.92rem;
+		font-weight: 600;
+		color: #374151;
 	}
 
 	@media (max-width: 900px) {
 		.parallax {
 			background-attachment: scroll;
+		}
+
+		.content-shell {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>
@@ -105,18 +213,110 @@
 	</section>
 
 	<section class="content">
-		<article>
-			<h2>Placeholder Image Section</h2>
-			<p>
-				This image is a temporary placeholder so you can swap in your own media later.
-			</p>
-			<img
-				class="placeholder-image"
-				src="https://picsum.photos/1200/600"
-				alt="Placeholder landscape image"
-			>
-		</article>
+		<div class="content-shell">
+			<aside class="repo-panel" aria-label="Repository stack">
+				<h2>Featured Repositories</h2>
+				<p>Three repos rotate as you move through the videos.</p>
+				<ul id="repoStack" class="repo-stack"></ul>
+			</aside>
+
+			<article class="video-panel">
+				<h2>Project Video Showcase</h2>
+				<p>Use the carousel controls to switch the embedded YouTube video.</p>
+				<div class="video-wrap">
+					<iframe
+						id="videoPlayer"
+						src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+						title="Project video"
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+						allowfullscreen
+					></iframe>
+				</div>
+				<div class="controls">
+					<button id="prevBtn" type="button" aria-label="Previous video">Previous</button>
+					<button id="nextBtn" type="button" aria-label="Next video">Next</button>
+				</div>
+				<div id="videoCaption" aria-live="polite"></div>
+			</article>
+		</div>
 	</section>
+
+	<script>
+		const repoVideos = [
+			{
+				name: "repo-one",
+				description: "Replace with your first repository and project trailer.",
+				repoUrl: "https://github.com/your-name/repo-one",
+				youtubeEmbed: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+			},
+			{
+				name: "repo-two",
+				description: "Replace with your second repository and demo walkthrough.",
+				repoUrl: "https://github.com/your-name/repo-two",
+				youtubeEmbed: "https://www.youtube.com/embed/ysz5S6PUM-U"
+			},
+			{
+				name: "repo-three",
+				description: "Replace with your third repository and release video.",
+				repoUrl: "https://github.com/your-name/repo-three",
+				youtubeEmbed: "https://www.youtube.com/embed/tgbNymZ7vqY"
+			}
+		];
+
+		const repoStack = document.getElementById("repoStack");
+		const videoPlayer = document.getElementById("videoPlayer");
+		const videoCaption = document.getElementById("videoCaption");
+		const prevBtn = document.getElementById("prevBtn");
+		const nextBtn = document.getElementById("nextBtn");
+
+		let current = 0;
+
+		function normalizeIndex(index) {
+			const total = repoVideos.length;
+			return (index + total) % total;
+		}
+
+		function getStackIndices(centerIndex) {
+			return [
+				normalizeIndex(centerIndex),
+				normalizeIndex(centerIndex + 1),
+				normalizeIndex(centerIndex + 2)
+			];
+		}
+
+		function render() {
+			const active = repoVideos[current];
+			videoPlayer.src = active.youtubeEmbed;
+			videoPlayer.title = `${active.name} video`;
+			videoCaption.textContent = `${active.name} - ${active.description}`;
+
+			const stack = getStackIndices(current)
+				.map((i, order) => {
+					const item = repoVideos[i];
+					const isActive = order === 0;
+					return `
+						<li class="repo-card${isActive ? " active" : ""}">
+							<h3>${item.name}</h3>
+							<div class="repo-desc">${item.description}</div>
+							<a class="repo-link" href="${item.repoUrl}" target="_blank" rel="noopener noreferrer">Open Repository</a>
+						</li>
+					`;
+				})
+				.join("");
+
+			repoStack.innerHTML = stack;
+		}
+
+		function move(step) {
+			current = normalizeIndex(current + step);
+			render();
+		}
+
+		prevBtn.addEventListener("click", () => move(-1));
+		nextBtn.addEventListener("click", () => move(1));
+
+		render();
+	</script>
 
 </body>
 </html>
