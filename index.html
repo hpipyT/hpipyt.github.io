@@ -58,6 +58,7 @@
 	}
 
 	.parallax.expanded {
+		height: 100vh;
 		min-height: 100vh;
 	}
 
@@ -105,12 +106,6 @@
 		margin: 0 0 0.55rem;
 		color: #fff;
 		font-size: clamp(1rem, 1.8vw, 1.35rem);
-	}
-
-	.video-hint {
-		margin-top: 0.2rem;
-		font-size: 0.83rem;
-		color: rgb(255 237 213 / 0.92);
 	}
 
 	.repo-carousel {
@@ -194,12 +189,12 @@
 		border-right: 1px solid #fdba74;
 		background: #ffedd5;
 		color: #9a3412;
-		padding: 0.7rem 0.42rem;
+		padding: 0.7rem 0.2rem;
 		font-size: 0.86rem;
 		font-weight: 600;
 		cursor: pointer;
 		white-space: nowrap;
-		flex: 1 1 0;
+		flex: 0.35 1 0;
 		min-width: 0;
 		transition: flex 210ms ease, background-color 160ms ease, color 160ms ease, padding 210ms ease;
 		overflow: hidden;
@@ -212,37 +207,40 @@
 		border-right: 0;
 	}
 
-	.repo-button .repo-mini {
-		opacity: 0.85;
-	}
-
 	.repo-button .repo-full {
-		display: none;
+		display: block;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		opacity: 0;
+		transition: opacity 130ms ease;
+		width: 100%;
+		text-align: left;
 	}
 
 	.repo-button.active,
 	.repo-button.hovered {
-		flex: 5 1 0;
 		justify-content: flex-start;
 		padding-left: 0.8rem;
-		background: #fdba74;
-		color: #7c2d12;
 	}
 
-	.repo-button.active .repo-mini,
-	.repo-button.hovered .repo-mini {
-		display: none;
+	.repo-button.active {
+		flex: 12 1 0;
+		background: #fdba74;
+		color: #7c2d12;
+		font-weight: 700;
+	}
+
+	.repo-button.hovered {
+		flex: 6 1 0;
+		justify-content: flex-start;
+		padding-left: 0.8rem;
+		background: #fed7aa;
+		color: #7c2d12;
 	}
 
 	.repo-button.active .repo-full,
 	.repo-button.hovered .repo-full {
-		display: block;
-	}
-
-	.repo-button.active {
-		font-weight: 700;
+		opacity: 1;
 	}
 
 	.repo-meta {
@@ -287,11 +285,12 @@
 		opacity: 0.85;
 		transition: opacity 220ms ease;
 		background:
-			radial-gradient(ellipse at 20% 70%, rgb(255 255 255 / 0.58) 0%, transparent 57%),
-			radial-gradient(ellipse at 50% 86%, rgb(255 255 255 / 0.44) 0%, transparent 62%),
-			radial-gradient(ellipse at 80% 74%, rgb(255 255 255 / 0.55) 0%, transparent 59%);
-		filter: blur(18px);
-		animation: fogDrift 18s ease-in-out infinite alternate;
+			radial-gradient(ellipse 22% 19% at 12% 82%, rgb(248 253 255 / 0.88) 0 38%, rgb(220 246 255 / 0.56) 39% 56%, transparent 57%),
+			radial-gradient(ellipse 24% 20% at 34% 87%, rgb(244 252 255 / 0.82) 0 36%, rgb(214 241 255 / 0.5) 37% 58%, transparent 59%),
+			radial-gradient(ellipse 24% 18% at 58% 85%, rgb(252 255 255 / 0.9) 0 35%, rgb(221 244 255 / 0.52) 36% 56%, transparent 57%),
+			radial-gradient(ellipse 21% 18% at 80% 80%, rgb(249 254 255 / 0.86) 0 40%, rgb(214 240 255 / 0.48) 41% 58%, transparent 59%);
+		filter: blur(10px) saturate(1.12);
+		animation: fogDrift 12s ease-in-out infinite alternate;
 	}
 
 	@keyframes fogDrift {
@@ -350,7 +349,6 @@
 		<button id="prevBtn" class="side-arrow left" type="button" aria-label="Previous repository">&#8249;</button>
 		<div id="playerPanel" class="parallax-stage">
 			<h2 id="videoTitle" class="video-title">Loading repositories...</h2>
-			<div class="video-hint">Click the video surface to expand and play. Scroll away to pause and collapse.</div>
 		</div>
 		<div id="repoCarousel" class="repo-carousel" aria-label="Repository buttons"></div>
 		<button id="nextBtn" class="side-arrow right" type="button" aria-label="Next repository">&#8250;</button>
@@ -394,6 +392,8 @@
 		let hoveredIndex = -1;
 		let renderToken = 0;
 		let isExpanded = false;
+		let isPlaying = false;
+		let expandedLockScrollY = 0;
 		let activeEmbedBase = "https://www.youtube.com/embed/dQw4w9WgXcQ";
 
 		function normalizeIndex(index) {
@@ -542,9 +542,10 @@
 		}
 
 		function centerPlayerInView() {
-			const panelRect = playerPanel.getBoundingClientRect();
-			const absoluteCenter = window.scrollY + panelRect.top + panelRect.height / 2;
-			const targetY = Math.max(0, absoluteCenter - window.innerHeight / 2);
+			const top = parallaxSection.offsetTop;
+			const sectionHeight = parallaxSection.offsetHeight;
+			const targetY = Math.max(0, top + sectionHeight / 2 - window.innerHeight / 2);
+			expandedLockScrollY = targetY;
 			smoothScrollTo(targetY, SLIDE_SPEED_MS);
 		}
 
@@ -558,6 +559,7 @@
 				return;
 			}
 			sendPlayerCommand("pauseVideo");
+			isPlaying = false;
 			setExpandedState(false);
 		}
 
@@ -565,6 +567,21 @@
 			setExpandedState(true);
 			centerPlayerInView();
 			videoPlayer.src = buildEmbedUrl(activeEmbedBase, true);
+			isPlaying = true;
+		}
+
+		function togglePlayPauseInExpanded() {
+			if (!isExpanded) {
+				expandAndPlay();
+				return;
+			}
+			if (isPlaying) {
+				sendPlayerCommand("pauseVideo");
+				isPlaying = false;
+			} else {
+				sendPlayerCommand("playVideo");
+				isPlaying = true;
+			}
 		}
 
 		async function render() {
@@ -593,6 +610,7 @@
 
 			activeEmbedBase = embed;
 			videoPlayer.src = buildEmbedUrl(activeEmbedBase, isExpanded);
+			isPlaying = isExpanded;
 			videoPlayer.title = `${active.name} video`;
 
 			const readme = await getReadme(active);
@@ -639,6 +657,16 @@
 			}
 		}
 
+		function hairlineCollapseOnScrollAway() {
+			if (!isExpanded) {
+				return;
+			}
+			const drift = Math.abs(window.scrollY - expandedLockScrollY);
+			if (drift > 14) {
+				pauseAndCollapse();
+			}
+		}
+
 		function updateFogOpacity() {
 			const fadeDistance = window.innerHeight * 0.95;
 			const opacity = Math.max(0, 0.86 - window.scrollY / fadeDistance);
@@ -647,6 +675,7 @@
 
 		function onScrollEffects() {
 			snapToParallaxOnThreshold();
+			hairlineCollapseOnScrollAway();
 			updateFogOpacity();
 		}
 
@@ -654,7 +683,6 @@
 			repoCarousel.innerHTML = repoVideos
 				.map((repo, index) => `
 					<button class="repo-button${index === current ? " active" : ""}" data-index="${index}" type="button">
-						<span class="repo-mini">${index + 1}</span>
 						<span class="repo-full">${repo.name}</span>
 					</button>
 				`)
@@ -726,7 +754,7 @@
 		}
 
 		function unlockAndPlay() {
-			expandAndPlay();
+			togglePlayPauseInExpanded();
 		}
 
 		const sectionObserver = new IntersectionObserver(
@@ -749,7 +777,7 @@
 			if (target.closest(".repo-button") || target.closest(".side-arrow") || target.closest(".repo-link")) {
 				return;
 			}
-			expandAndPlay();
+			unlockAndPlay();
 		});
 
 		prevBtn.addEventListener("click", (event) => {
