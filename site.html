@@ -48,7 +48,10 @@
 	.parallax {
 		position: relative;
 		min-height: 76vh;
-		background-image: linear-gradient(130deg, rgb(31 41 55 / 0.8), rgb(146 64 14 / 0.7)), url("https://picsum.photos/1600/900?grayscale");
+		--video-thumb: url("https://picsum.photos/1600/900?grayscale");
+		--mouse-x: 50%;
+		--mouse-y: 50%;
+		background-image: linear-gradient(130deg, rgb(31 41 55 / 0.78), rgb(146 64 14 / 0.66)), var(--video-thumb);
 		background-attachment: fixed;
 		background-position: center;
 		background-repeat: no-repeat;
@@ -56,6 +59,22 @@
 		display: grid;
 		place-items: center;
 		padding: 1.5rem clamp(2.8rem, 8vw, 5.5rem);
+		overflow: hidden;
+	}
+
+	.thumb-reveal {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background-image: linear-gradient(130deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.02)), var(--video-thumb);
+		background-attachment: fixed;
+		background-position: center;
+		background-repeat: no-repeat;
+		background-size: cover;
+		opacity: 0.72;
+		mask-image: radial-gradient(circle 130px at var(--mouse-x) var(--mouse-y), rgb(0 0 0 / 0.95) 0%, rgb(0 0 0 / 0.2) 42%, transparent 82%);
+		-webkit-mask-image: radial-gradient(circle 130px at var(--mouse-x) var(--mouse-y), rgb(0 0 0 / 0.95) 0%, rgb(0 0 0 / 0.2) 42%, transparent 82%);
+		z-index: 0;
 	}
 
 	.parallax-stage {
@@ -66,6 +85,8 @@
 		padding: 1rem;
 		backdrop-filter: blur(4px);
 		box-shadow: 0 18px 44px rgb(0 0 0 / 0.3);
+		position: relative;
+		z-index: 1;
 	}
 
 	.video-title {
@@ -89,6 +110,34 @@
 		width: 100%;
 		height: 100%;
 		border: 0;
+	}
+
+	.video-overlay {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		background-image: linear-gradient(130deg, rgb(15 23 42 / 0.54), rgb(124 45 18 / 0.44)), var(--video-thumb);
+		background-size: cover;
+		background-position: center;
+		color: #fff;
+		font-weight: 700;
+		letter-spacing: 0.02em;
+		cursor: pointer;
+		opacity: 1;
+		transition: opacity 750ms ease;
+	}
+
+	.video-overlay.fade-out {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.video-overlay span {
+		padding: 0.48rem 0.88rem;
+		border-radius: 999px;
+		background: rgb(15 23 42 / 0.58);
+		border: 1px solid rgb(255 255 255 / 0.24);
 	}
 
 	.side-arrow {
@@ -123,8 +172,8 @@
 	}
 
 	.content {
-		min-height: 45vh;
-		padding: 2rem 1.25rem 3rem;
+		min-height: 40vh;
+		padding: 0.85rem 1.25rem 3rem;
 		display: grid;
 		place-items: center;
 	}
@@ -140,37 +189,86 @@
 	.content-shell h2 {
 		margin: 0;
 		font-size: 1.2rem;
+		text-align: center;
 	}
 
 	.content-shell p {
 		margin: 0.35rem 0 1rem;
 		color: var(--muted);
 		font-size: 0.95rem;
+		text-align: center;
+	}
+
+	.carousel-frame {
+		width: min(34vw, 680px);
+		min-width: min(520px, 100%);
+		max-width: 100%;
+		margin: 0 auto;
 	}
 
 	.repo-carousel {
 		display: flex;
-		gap: 0.55rem;
-		overflow-x: auto;
-		padding-bottom: 0.35rem;
-		scrollbar-width: thin;
+		gap: 0;
+		overflow: hidden;
+		border: 1px solid #fdba74;
+		border-radius: 0.72rem;
+		background: #fff7ed;
 	}
 
 	.repo-button {
-		border: 1px solid #fdba74;
-		background: #fff7ed;
+		border: 0;
+		border-right: 1px solid #fdba74;
+		background: #ffedd5;
 		color: #9a3412;
-		border-radius: 999px;
-		padding: 0.45rem 0.85rem;
+		padding: 0.7rem 0.42rem;
 		font-size: 0.86rem;
 		font-weight: 600;
 		cursor: pointer;
 		white-space: nowrap;
+		flex: 1 1 0;
+		min-width: 0;
+		transition: flex 210ms ease, background-color 160ms ease, color 160ms ease, padding 210ms ease;
+		overflow: hidden;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.repo-button:last-child {
+		border-right: 0;
+	}
+
+	.repo-button .repo-mini {
+		opacity: 0.85;
+	}
+
+	.repo-button .repo-full {
+		display: none;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.repo-button.active,
+	.repo-button.hovered {
+		flex: 5 1 0;
+		justify-content: flex-start;
+		padding-left: 0.8rem;
+		background: #fdba74;
+		color: #7c2d12;
+	}
+
+	.repo-button.active .repo-mini,
+	.repo-button.hovered .repo-mini {
+		display: none;
+	}
+
+	.repo-button.active .repo-full,
+	.repo-button.hovered .repo-full {
+		display: block;
 	}
 
 	.repo-button.active {
-		background: #fdba74;
-		color: #7c2d12;
+		font-weight: 700;
 	}
 
 	.repo-meta {
@@ -210,6 +308,15 @@
 			padding: 1.25rem 1rem 1.5rem;
 		}
 
+		.thumb-reveal {
+			background-attachment: scroll;
+		}
+
+		.carousel-frame {
+			min-width: 100%;
+			width: 100%;
+		}
+
 		.side-arrow {
 			top: auto;
 			bottom: 0.7rem;
@@ -231,17 +338,21 @@
 	</section>
 
 	<section id="videoParallax" class="parallax" aria-label="Parallax video section">
+		<div id="thumbReveal" class="thumb-reveal" aria-hidden="true"></div>
 		<button id="prevBtn" class="side-arrow left" type="button" aria-label="Previous repository">&#8249;</button>
 		<div class="parallax-stage">
 			<h2 id="videoTitle" class="video-title">Loading repositories...</h2>
 			<div class="video-wrap">
 				<iframe
 					id="videoPlayer"
-					src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+					src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1"
 					title="Project video"
 					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
 					allowfullscreen
 				></iframe>
+				<button id="videoOverlay" class="video-overlay" type="button" aria-label="Reveal and play video">
+					<span>Click To Reveal And Play</span>
+				</button>
 			</div>
 		</div>
 		<button id="nextBtn" class="side-arrow right" type="button" aria-label="Next repository">&#8250;</button>
@@ -250,8 +361,10 @@
 	<section class="content">
 		<div class="content-shell">
 			<h2>Repository Video Carousel</h2>
-			<p>Select any repository button to switch video and load README text.</p>
-			<div id="repoCarousel" class="repo-carousel" aria-label="Repository buttons"></div>
+			<p>Hover cells to preview names. Click one to switch video and README.</p>
+			<div class="carousel-frame">
+				<div id="repoCarousel" class="repo-carousel" aria-label="Repository buttons"></div>
+			</div>
 			<div id="repoMeta" class="repo-meta" aria-live="polite"></div>
 			<a id="repoLink" class="repo-link" href="#" target="_blank" rel="noopener noreferrer">Open repository</a>
 			<div id="readmeText" class="readme loading">Loading README...</div>
@@ -265,20 +378,26 @@
 		const parallaxSection = document.getElementById("videoParallax");
 		const videoTitle = document.getElementById("videoTitle");
 		const videoPlayer = document.getElementById("videoPlayer");
+		const videoOverlay = document.getElementById("videoOverlay");
 		const repoCarousel = document.getElementById("repoCarousel");
 		const repoMeta = document.getElementById("repoMeta");
 		const repoLink = document.getElementById("repoLink");
 		const readmeText = document.getElementById("readmeText");
+		const thumbReveal = document.getElementById("thumbReveal");
 		const prevBtn = document.getElementById("prevBtn");
 		const nextBtn = document.getElementById("nextBtn");
 
 		const readmeCache = new Map();
 		const videoCache = new Map();
+		const thumbCache = new Map();
 		let current = 0;
-		let githubUser = "hpipyT";
 		let repoVideos = [];
 		let autoSnapCooldown = false;
 		let lastScrollY = window.scrollY;
+		let hoveredIndex = -1;
+		let renderToken = 0;
+		let isPlayerUnlocked = false;
+		let activeEmbedBase = "https://www.youtube.com/embed/dQw4w9WgXcQ";
 
 		function normalizeIndex(index) {
 			const total = repoVideos.length;
@@ -287,6 +406,24 @@
 
 		function embedFromVideoId(videoId) {
 			return `https://www.youtube.com/embed/${videoId}`;
+		}
+
+		function parseEmbedVideoId(embedUrl) {
+			const match = embedUrl.match(/\/embed\/([^?&]+)/i);
+			return match ? match[1] : null;
+		}
+
+		function buildEmbedUrl(base, autoplay) {
+			const suffix = autoplay ? "?autoplay=1&rel=0&modestbranding=1" : "?rel=0&modestbranding=1";
+			return `${base}${suffix}`;
+		}
+
+		function thumbFromVideoId(videoId) {
+			return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+		}
+
+		function setParallaxThumb(url) {
+			parallaxSection.style.setProperty("--video-thumb", `url('${url}')`);
 		}
 
 		function escapeHtml(text) {
@@ -333,6 +470,7 @@
 			const buttons = repoCarousel.querySelectorAll(".repo-button");
 			buttons.forEach((button, index) => {
 				button.classList.toggle("active", index === current);
+				button.classList.toggle("hovered", index === hoveredIndex && hoveredIndex !== current);
 			});
 		}
 
@@ -382,10 +520,25 @@
 			return embed;
 		}
 
+		async function resolveThumbnail(repo, index) {
+			const key = `${repo.owner}/${repo.name}`;
+			if (thumbCache.has(key)) {
+				return thumbCache.get(key);
+			}
+
+			const embed = await resolveVideoEmbed(repo, index);
+			const videoId = parseEmbedVideoId(embed);
+			const thumb = videoId ? thumbFromVideoId(videoId) : "https://picsum.photos/1600/900?grayscale";
+			thumbCache.set(key, thumb);
+			return thumb;
+		}
+
 		async function render() {
 			if (!repoVideos.length) {
 				return;
 			}
+
+			const token = ++renderToken;
 
 			const active = repoVideos[current];
 			videoTitle.textContent = active.name;
@@ -393,16 +546,33 @@
 			repoLink.href = active.repoUrl;
 			repoLink.textContent = `Open ${active.name} on GitHub`;
 
+			hoveredIndex = -1;
 			updateButtonState();
 
 			readmeText.classList.add("loading");
 			readmeText.textContent = "Loading README...";
+			videoOverlay.classList.remove("fade-out");
+			isPlayerUnlocked = false;
 
 			const embed = await resolveVideoEmbed(active, current);
-			videoPlayer.src = embed;
+			if (token !== renderToken) {
+				return;
+			}
+
+			activeEmbedBase = embed;
+			videoPlayer.src = buildEmbedUrl(activeEmbedBase, false);
 			videoPlayer.title = `${active.name} video`;
 
+			const thumb = await resolveThumbnail(active, current);
+			if (token !== renderToken) {
+				return;
+			}
+			setParallaxThumb(thumb);
+
 			const readme = await getReadme(active);
+			if (token !== renderToken) {
+				return;
+			}
 			readmeText.classList.remove("loading");
 			readmeText.innerHTML = escapeHtml(readme);
 		}
@@ -424,23 +594,46 @@
 				return;
 			}
 
+			const stage = parallaxSection.querySelector(".parallax-stage");
+			if (!stage) {
+				return;
+			}
+
 			const rect = parallaxSection.getBoundingClientRect();
-			const inThreshold = rect.top <= window.innerHeight * 0.34 && rect.top >= -window.innerHeight * 0.2;
+			const inThreshold = rect.top <= window.innerHeight * 0.62 && rect.top >= window.innerHeight * 0.35;
 			if (inThreshold) {
 				autoSnapCooldown = true;
-				parallaxSection.scrollIntoView({ behavior: "smooth", block: "start" });
+				const stageRect = stage.getBoundingClientRect();
+				const absoluteStageCenter = window.scrollY + stageRect.top + stageRect.height / 2;
+				const targetY = Math.max(0, absoluteStageCenter - window.innerHeight / 2);
+				window.scrollTo({ top: targetY, behavior: "smooth" });
 				setTimeout(() => {
 					autoSnapCooldown = false;
-				}, 900);
+				}, 1050);
 			}
 		}
 
 		function renderButtons() {
 			repoCarousel.innerHTML = repoVideos
-				.map((repo, index) => `<button class="repo-button${index === current ? " active" : ""}" data-index="${index}" type="button">${repo.name}</button>`)
+				.map((repo, index) => `
+					<button class="repo-button${index === current ? " active" : ""}" data-index="${index}" type="button">
+						<span class="repo-mini">${index + 1}</span>
+						<span class="repo-full">${repo.name}</span>
+					</button>
+				`)
 				.join("");
 
 			repoCarousel.querySelectorAll(".repo-button").forEach((button) => {
+				button.addEventListener("mouseenter", () => {
+					hoveredIndex = Number(button.dataset.index);
+					updateButtonState();
+				});
+
+				button.addEventListener("mouseleave", () => {
+					hoveredIndex = -1;
+					updateButtonState();
+				});
+
 				button.addEventListener("click", () => {
 					current = Number(button.dataset.index);
 					render();
@@ -455,7 +648,7 @@
 			}
 			const repos = await response.json();
 			return repos
-				.filter((repo) => !repo.archived)
+				.filter((repo) => repo.name)
 				.map((repo) => ({
 					owner: repo.owner.login,
 					name: repo.name,
@@ -470,7 +663,6 @@
 				try {
 					const repos = await fetchReposForUser(user);
 					if (repos.length) {
-						githubUser = user;
 						repoVideos = repos;
 						break;
 					}
@@ -494,6 +686,25 @@
 			renderButtons();
 			render();
 		}
+
+		function unlockAndPlay() {
+			if (isPlayerUnlocked) {
+				return;
+			}
+			isPlayerUnlocked = true;
+			videoOverlay.classList.add("fade-out");
+			videoPlayer.src = buildEmbedUrl(activeEmbedBase, true);
+		}
+
+		parallaxSection.addEventListener("mousemove", (event) => {
+			const rect = parallaxSection.getBoundingClientRect();
+			const x = ((event.clientX - rect.left) / rect.width) * 100;
+			const y = ((event.clientY - rect.top) / rect.height) * 100;
+			parallaxSection.style.setProperty("--mouse-x", `${x}%`);
+			parallaxSection.style.setProperty("--mouse-y", `${y}%`);
+		});
+
+		videoOverlay.addEventListener("click", unlockAndPlay);
 
 		prevBtn.addEventListener("click", () => move(-1));
 		nextBtn.addEventListener("click", () => move(1));
