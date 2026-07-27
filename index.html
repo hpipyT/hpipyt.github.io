@@ -48,17 +48,15 @@
 		height: 100%;
 		z-index: 1;
 		pointer-events: none;
+		overflow: hidden;
 	}
 
-	.tess-row {
+	.tess-piece {
+		position: absolute;
+		image-rendering: auto;
+		transform-origin: center center;
 		transition: transform 60ms linear, opacity 100ms linear;
-	}
-
-	.tess-tile {
-		fill: rgb(255 255 255 / 0.95);
-		stroke: rgb(0 0 0 / 0.75);
-		stroke-width: 1.35;
-		vector-effect: non-scaling-stroke;
+		will-change: transform, opacity;
 	}
 
 	.hero h1 {
@@ -328,7 +326,7 @@
 </head>
 <body>
 	<section class="hero">
-		<svg id="tessellationLayer" class="tessellation-layer" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true"></svg>
+		<div id="tessellationLayer" class="tessellation-layer" aria-hidden="true"></div>
 		<div class="hero-copy">
 			<h1>Parallax Scroll Effect</h1>
 			<p>Scroll down to see the background move at a different pace than the content.</p>
@@ -368,6 +366,7 @@
 		const candidateUsers = ["hpipyT", "Hpipyt", "hpipy"];
 		const fallbackEmbedIds = ["dQw4w9WgXcQ", "ysz5S6PUM-U", "tgbNymZ7vqY"];
 		const SLIDE_SPEED_MS = 920;
+		const TESSELLATION_IMAGE = "tesellation.jpg";
 
 		const parallaxSection = document.getElementById("videoParallax");
 		const playerPanel = document.getElementById("playerPanel");
@@ -394,7 +393,8 @@
 		let isPlaying = false;
 		let expandedLockScrollY = 0;
 		let isProgrammaticScroll = false;
-		const tessellationRows = [];
+		const tessellationPieces = [];
+		let tessellationBuildToken = 0;
 		let activeEmbedBase = "https://www.youtube.com/embed/dQw4w9WgXcQ";
 
 		function normalizeIndex(index) {
@@ -677,68 +677,269 @@
 			}
 		}
 
-		function buildTessellation() {
+		function clearTessellation() {
 			if (!tessellationLayer) {
 				return;
 			}
 
 			tessellationLayer.innerHTML = "";
-			tessellationRows.length = 0;
+			tessellationPieces.length = 0;
+		}
+
+		function clamp(value, min, max) {
+			return Math.max(min, Math.min(max, value));
+		}
+
+		function buildFallbackTessellation() {
+			clearTessellation();
 
 			const rows = 10;
 			const cols = 16;
-			const width = 1200;
-			const height = 700;
-			const cellW = width / cols;
-			const cellH = height / rows;
-
 			for (let row = 0; row < rows; row += 1) {
-				const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-				g.setAttribute("class", "tess-row");
-
 				for (let col = 0; col < cols; col += 1) {
-					const x = col * cellW;
-					const y = row * cellH;
-					const flip = (row + col) % 2 === 0;
-					const p1 = flip
-						? `${x},${y} ${x + cellW},${y} ${x},${y + cellH}`
-						: `${x + cellW},${y} ${x + cellW},${y + cellH} ${x},${y}`;
-					const p2 = flip
-						? `${x + cellW},${y + cellH} ${x + cellW},${y} ${x},${y + cellH}`
-						: `${x},${y + cellH} ${x},${y} ${x + cellW},${y + cellH}`;
-
-					const polyA = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-					polyA.setAttribute("class", "tess-tile");
-					polyA.setAttribute("points", p1);
-					const polyB = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-					polyB.setAttribute("class", "tess-tile");
-					polyB.setAttribute("points", p2);
-
-					g.appendChild(polyA);
-					g.appendChild(polyB);
+					const piece = document.createElement("div");
+					piece.className = "tess-piece";
+					piece.style.left = `${(col / cols) * 100}%`;
+					piece.style.top = `${(row / rows) * 100}%`;
+					piece.style.width = `${100 / cols}%`;
+					piece.style.height = `${100 / rows}%`;
+					piece.style.background = "rgb(255 255 255 / 0.95)";
+					piece.style.border = "1px solid rgb(0 0 0 / 0.7)";
+					tessellationLayer.appendChild(piece);
+					tessellationPieces.push({
+						el: piece,
+						yNorm: (row + 0.5) / rows,
+						jitter: ((row * cols + col) % 11) / 10
+					});
 				}
-
-				tessellationLayer.appendChild(g);
-				tessellationRows.push(g);
 			}
 		}
 
+		function extractPiecesFromImage(img, buildToken) {
+			if (!tessellationLayer || buildToken !== tessellationBuildToken) {
+				return;
+			}
+
+			clearTessellation();
+
+			const maxW = 520;
+			const scale = Math.min(1, maxW / img.naturalWidth);
+			const w = Math.max(120, Math.floor(img.naturalWidth * scale));
+			const h = Math.max(80, Math.floor(img.naturalHeight * scale));
+
+			const srcCanvas = document.createElement("canvas");
+			srcCanvas.width = w;
+			srcCanvas.height = h;
+			const srcCtx = srcCanvas.getContext("2d", { willReadFrequently: true });
+			if (!srcCtx) {
+				buildFallbackTessellation();
+				return;
+			}
+
+			srcCtx.drawImage(img, 0, 0, w, h);
+			const srcImage = srcCtx.getImageData(0, 0, w, h);
+			const srcData = srcImage.data;
+			const size = w * h;
+			const boundary = new Uint8Array(size);
+			const visited = new Uint8Array(size);
+
+			for (let y = 0; y < h; y += 1) {
+				for (let x = 0; x < w; x += 1) {
+					const i = y * w + x;
+					const p = i * 4;
+					const r = srcData[p];
+					const g = srcData[p + 1];
+					const b = srcData[p + 2];
+					const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+					if (luma < 88) {
+						boundary[i] = 1;
+					}
+				}
+			}
+
+			const components = [];
+			const queue = new Int32Array(size);
+
+			for (let sy = 0; sy < h; sy += 1) {
+				for (let sx = 0; sx < w; sx += 1) {
+					const start = sy * w + sx;
+					if (boundary[start] || visited[start]) {
+						continue;
+					}
+
+					let head = 0;
+					let tail = 0;
+					queue[tail++] = start;
+					visited[start] = 1;
+
+					const pixels = [];
+					let minX = sx;
+					let maxX = sx;
+					let minY = sy;
+					let maxY = sy;
+					let sumY = 0;
+
+					while (head < tail) {
+						const idx = queue[head++];
+						const x = idx % w;
+						const y = (idx - x) / w;
+						pixels.push(idx);
+						sumY += y;
+
+						if (x < minX) minX = x;
+						if (x > maxX) maxX = x;
+						if (y < minY) minY = y;
+						if (y > maxY) maxY = y;
+
+						const left = idx - 1;
+						const right = idx + 1;
+						const up = idx - w;
+						const down = idx + w;
+
+						if (x > 0 && !visited[left] && !boundary[left]) {
+							visited[left] = 1;
+							queue[tail++] = left;
+						}
+						if (x < w - 1 && !visited[right] && !boundary[right]) {
+							visited[right] = 1;
+							queue[tail++] = right;
+						}
+						if (y > 0 && !visited[up] && !boundary[up]) {
+							visited[up] = 1;
+							queue[tail++] = up;
+						}
+						if (y < h - 1 && !visited[down] && !boundary[down]) {
+							visited[down] = 1;
+							queue[tail++] = down;
+						}
+					}
+
+					if (pixels.length < 18) {
+						continue;
+					}
+
+					components.push({
+						pixels,
+						minX,
+						maxX,
+						minY,
+						maxY,
+						yNorm: (sumY / pixels.length) / h
+					});
+				}
+			}
+
+			components.sort((a, b) => b.pixels.length - a.pixels.length);
+			const selected = components.slice(0, 340);
+
+			for (let i = 0; i < selected.length; i += 1) {
+				const comp = selected[i];
+				const pad = 1;
+				const boxW = comp.maxX - comp.minX + 1 + pad * 2;
+				const boxH = comp.maxY - comp.minY + 1 + pad * 2;
+
+				const localMask = new Uint8Array(boxW * boxH);
+				for (const idx of comp.pixels) {
+					const px = idx % w;
+					const py = (idx - px) / w;
+					const lx = px - comp.minX + pad;
+					const ly = py - comp.minY + pad;
+					localMask[ly * boxW + lx] = 1;
+				}
+
+				const pieceCanvas = document.createElement("canvas");
+				pieceCanvas.width = boxW;
+				pieceCanvas.height = boxH;
+				const pctx = pieceCanvas.getContext("2d", { willReadFrequently: true });
+				if (!pctx) {
+					continue;
+				}
+
+				const pieceImg = pctx.createImageData(boxW, boxH);
+				const pieceData = pieceImg.data;
+
+				for (let ly = 0; ly < boxH; ly += 1) {
+					for (let lx = 0; lx < boxW; lx += 1) {
+						const gx = comp.minX + lx - pad;
+						const gy = comp.minY + ly - pad;
+						if (gx < 0 || gy < 0 || gx >= w || gy >= h) {
+							continue;
+						}
+
+						const li = ly * boxW + lx;
+						const include =
+							localMask[li]
+							|| (lx > 0 && localMask[li - 1])
+							|| (lx < boxW - 1 && localMask[li + 1])
+							|| (ly > 0 && localMask[li - boxW])
+							|| (ly < boxH - 1 && localMask[li + boxW]);
+						if (!include) {
+							continue;
+						}
+
+						const srcI = (gy * w + gx) * 4;
+						const outI = li * 4;
+						pieceData[outI] = srcData[srcI];
+						pieceData[outI + 1] = srcData[srcI + 1];
+						pieceData[outI + 2] = srcData[srcI + 2];
+						pieceData[outI + 3] = 255;
+					}
+				}
+
+				pctx.putImageData(pieceImg, 0, 0);
+				pieceCanvas.className = "tess-piece";
+				pieceCanvas.style.left = `${((comp.minX - pad) / w) * 100}%`;
+				pieceCanvas.style.top = `${((comp.minY - pad) / h) * 100}%`;
+				pieceCanvas.style.width = `${(boxW / w) * 100}%`;
+				pieceCanvas.style.height = `${(boxH / h) * 100}%`;
+
+				tessellationLayer.appendChild(pieceCanvas);
+				tessellationPieces.push({
+					el: pieceCanvas,
+					yNorm: comp.yNorm,
+					jitter: ((i * 37) % 100) / 100
+				});
+			}
+
+			if (!tessellationPieces.length) {
+				buildFallbackTessellation();
+			}
+		}
+
+		function buildTessellationFromImage() {
+			tessellationBuildToken += 1;
+			const buildToken = tessellationBuildToken;
+			const img = new Image();
+			img.onload = () => {
+				extractPiecesFromImage(img, buildToken);
+				updateTessellationOnScroll();
+			};
+			img.onerror = () => {
+				if (buildToken === tessellationBuildToken) {
+					buildFallbackTessellation();
+					updateTessellationOnScroll();
+				}
+			};
+			img.src = `${TESSELLATION_IMAGE}?v=1`;
+
+		}
+
 		function updateTessellationOnScroll() {
-			if (!heroSection || !tessellationRows.length) {
+			if (!heroSection || !tessellationPieces.length) {
 				return;
 			}
 
 			const rect = heroSection.getBoundingClientRect();
-			const progress = Math.max(0, Math.min(1, -rect.top / heroSection.offsetHeight));
-			const rowCount = tessellationRows.length;
+			const progress = clamp(-rect.top / heroSection.offsetHeight, 0, 1);
 
-			tessellationRows.forEach((rowEl, rowIndex) => {
-				const bottomOrder = rowCount - 1 - rowIndex;
-				const delay = bottomOrder * 0.06;
-				const local = Math.max(0, Math.min(1, (progress - delay) / (1 - delay)));
-				const lift = local * (heroSection.offsetHeight * 1.1);
-				rowEl.style.transform = `translateY(${-lift}px)`;
-				rowEl.style.opacity = String(1 - local * 0.85);
+			tessellationPieces.forEach((piece) => {
+				const delay = (1 - piece.yNorm) * 0.58;
+				const local = clamp((progress - delay) / (1 - delay), 0, 1);
+				const lift = local * (heroSection.offsetHeight * (0.9 + piece.jitter * 0.45));
+				const sway = (piece.jitter - 0.5) * 34 * local;
+				const rotate = (piece.jitter - 0.5) * 9 * local;
+				piece.el.style.transform = `translate(${sway}px, ${-lift}px) rotate(${rotate}deg)`;
+				piece.el.style.opacity = String(1 - local * 0.92);
 			});
 		}
 
@@ -858,9 +1059,15 @@
 			move(1);
 		});
 		window.addEventListener("scroll", onScrollEffects, { passive: true });
-		window.addEventListener("resize", updateTessellationOnScroll);
+		let resizeTimer;
+		window.addEventListener("resize", () => {
+			window.clearTimeout(resizeTimer);
+			resizeTimer = window.setTimeout(() => {
+				buildTessellationFromImage();
+			}, 120);
+		});
 
-		buildTessellation();
+		buildTessellationFromImage();
 		loadRepos();
 		updateTessellationOnScroll();
 	</script>
