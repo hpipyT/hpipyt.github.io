@@ -9,6 +9,7 @@
 		--accent: #c2410c;
 		--surface: #fff;
 		--muted: #4b5563;
+		--slide-speed-ms: 920ms;
 	}
 
 	* {
@@ -25,7 +26,7 @@
 	}
 
 	.hero {
-		min-height: 100vh;
+		min-height: 66.67vh;
 		display: grid;
 		place-items: center;
 		padding: 2rem;
@@ -47,46 +48,57 @@
 
 	.parallax {
 		position: relative;
-		min-height: 76vh;
-		--video-thumb: url("https://picsum.photos/1600/900?grayscale");
-		--mouse-x: 50%;
-		--mouse-y: 50%;
-		background-image: linear-gradient(130deg, rgb(31 41 55 / 0.78), rgb(146 64 14 / 0.66)), var(--video-thumb);
+		min-height: 72vh;
+		transition: min-height var(--slide-speed-ms) ease;
 		background-attachment: fixed;
-		background-position: center;
-		background-repeat: no-repeat;
-		background-size: cover;
 		display: grid;
 		place-items: center;
-		padding: 1.5rem clamp(2.8rem, 8vw, 5.5rem);
+		padding: 1.5rem clamp(2.8rem, 8vw, 5.5rem) 5.2rem;
 		overflow: hidden;
 	}
 
-	.thumb-reveal {
+	.parallax.expanded {
+		min-height: 100vh;
+	}
+
+	.parallax-media {
 		position: absolute;
 		inset: 0;
-		pointer-events: none;
-		background-image: linear-gradient(130deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.02)), var(--video-thumb);
-		background-attachment: fixed;
-		background-position: center;
-		background-repeat: no-repeat;
-		background-size: cover;
-		opacity: 0.72;
-		mask-image: radial-gradient(circle 130px at var(--mouse-x) var(--mouse-y), rgb(0 0 0 / 0.95) 0%, rgb(0 0 0 / 0.2) 42%, transparent 82%);
-		-webkit-mask-image: radial-gradient(circle 130px at var(--mouse-x) var(--mouse-y), rgb(0 0 0 / 0.95) 0%, rgb(0 0 0 / 0.2) 42%, transparent 82%);
 		z-index: 0;
+	}
+
+	.parallax-media iframe {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		border: 0;
+		pointer-events: none;
+		filter: saturate(0.82) brightness(0.52) contrast(1.06);
+		transform: scale(1.12);
+	}
+
+	.parallax-fade {
+		position: absolute;
+		inset: 0;
+		background:
+			radial-gradient(circle at 50% 38%, rgb(255 255 255 / 0.12), transparent 54%),
+			linear-gradient(130deg, rgb(31 41 55 / 0.68), rgb(146 64 14 / 0.52));
+		z-index: 1;
+		pointer-events: none;
 	}
 
 	.parallax-stage {
 		width: min(1080px, 100%);
-		background: rgb(15 23 42 / 0.62);
+		background: rgb(15 23 42 / 0.52);
 		border: 1px solid rgb(255 255 255 / 0.18);
 		border-radius: 0.85rem;
-		padding: 1rem;
+		padding: 0.95rem 1rem;
 		backdrop-filter: blur(4px);
 		box-shadow: 0 18px 44px rgb(0 0 0 / 0.3);
 		position: relative;
-		z-index: 1;
+		z-index: 2;
+		cursor: pointer;
 	}
 
 	.video-title {
@@ -95,49 +107,27 @@
 		font-size: clamp(1rem, 1.8vw, 1.35rem);
 	}
 
-	.video-wrap {
-		position: relative;
-		width: 100%;
-		padding-top: 56.25%;
-		border-radius: 0.7rem;
+	.video-hint {
+		margin-top: 0.2rem;
+		font-size: 0.83rem;
+		color: rgb(255 237 213 / 0.92);
+	}
+
+	.repo-carousel {
+		position: absolute;
+		left: 50%;
+		bottom: 0.95rem;
+		transform: translateX(-50%);
+		z-index: 3;
+		display: flex;
+		gap: 0;
 		overflow: hidden;
-		background: #111827;
-	}
-
-	.video-wrap iframe {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		border: 0;
-	}
-
-	.video-overlay {
-		position: absolute;
-		inset: 0;
-		display: grid;
-		place-items: center;
-		background-image: linear-gradient(130deg, rgb(15 23 42 / 0.54), rgb(124 45 18 / 0.44)), var(--video-thumb);
-		background-size: cover;
-		background-position: center;
-		color: #fff;
-		font-weight: 700;
-		letter-spacing: 0.02em;
-		cursor: pointer;
-		opacity: 1;
-		transition: opacity 750ms ease;
-	}
-
-	.video-overlay.fade-out {
-		opacity: 0;
-		pointer-events: none;
-	}
-
-	.video-overlay span {
-		padding: 0.48rem 0.88rem;
-		border-radius: 999px;
-		background: rgb(15 23 42 / 0.58);
-		border: 1px solid rgb(255 255 255 / 0.24);
+		border: 1px solid #fdba74;
+		border-radius: 0.72rem;
+		background: #fff7ed;
+		width: min(35vw, 700px);
+		min-width: min(540px, calc(100vw - 2.8rem));
+		max-width: calc(100vw - 2.2rem);
 	}
 
 	.side-arrow {
@@ -173,7 +163,7 @@
 
 	.content {
 		min-height: 40vh;
-		padding: 0.85rem 1.25rem 3rem;
+		padding: 0.5rem 1.25rem 3rem;
 		display: grid;
 		place-items: center;
 	}
@@ -197,22 +187,6 @@
 		color: var(--muted);
 		font-size: 0.95rem;
 		text-align: center;
-	}
-
-	.carousel-frame {
-		width: min(34vw, 680px);
-		min-width: min(520px, 100%);
-		max-width: 100%;
-		margin: 0 auto;
-	}
-
-	.repo-carousel {
-		display: flex;
-		gap: 0;
-		overflow: hidden;
-		border: 1px solid #fdba74;
-		border-radius: 0.72rem;
-		background: #fff7ed;
 	}
 
 	.repo-button {
@@ -302,24 +276,49 @@
 		font-style: italic;
 	}
 
+	.fog-layer {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: -20px;
+		height: 30vh;
+		pointer-events: none;
+		z-index: 4;
+		opacity: 0.85;
+		transition: opacity 220ms ease;
+		background:
+			radial-gradient(ellipse at 20% 70%, rgb(255 255 255 / 0.58) 0%, transparent 57%),
+			radial-gradient(ellipse at 50% 86%, rgb(255 255 255 / 0.44) 0%, transparent 62%),
+			radial-gradient(ellipse at 80% 74%, rgb(255 255 255 / 0.55) 0%, transparent 59%);
+		filter: blur(18px);
+		animation: fogDrift 18s ease-in-out infinite alternate;
+	}
+
+	@keyframes fogDrift {
+		from {
+			transform: translateX(-2%) translateY(0);
+		}
+		to {
+			transform: translateX(2%) translateY(-8px);
+		}
+	}
+
 	@media (max-width: 900px) {
 		.parallax {
 			background-attachment: scroll;
 			padding: 1.25rem 1rem 1.5rem;
 		}
 
-		.thumb-reveal {
-			background-attachment: scroll;
-		}
-
-		.carousel-frame {
-			min-width: 100%;
-			width: 100%;
+		.repo-carousel {
+			width: calc(100vw - 1.5rem);
+			min-width: 0;
+			max-width: calc(100vw - 1.5rem);
+			bottom: 0.35rem;
 		}
 
 		.side-arrow {
 			top: auto;
-			bottom: 0.7rem;
+			bottom: 3.35rem;
 			transform: none;
 		}
 
@@ -338,65 +337,63 @@
 	</section>
 
 	<section id="videoParallax" class="parallax" aria-label="Parallax video section">
-		<div id="thumbReveal" class="thumb-reveal" aria-hidden="true"></div>
-		<button id="prevBtn" class="side-arrow left" type="button" aria-label="Previous repository">&#8249;</button>
-		<div class="parallax-stage">
-			<h2 id="videoTitle" class="video-title">Loading repositories...</h2>
-			<div class="video-wrap">
-				<iframe
-					id="videoPlayer"
-					src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1"
-					title="Project video"
-					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-					allowfullscreen
-				></iframe>
-				<button id="videoOverlay" class="video-overlay" type="button" aria-label="Reveal and play video">
-					<span>Click To Reveal And Play</span>
-				</button>
-			</div>
+		<div class="parallax-media" aria-hidden="true">
+			<iframe
+				id="videoPlayer"
+				src="https://www.youtube.com/embed/dQw4w9WgXcQ?enablejsapi=1&playsinline=1&rel=0&modestbranding=1"
+				title="Project video"
+				allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+				allowfullscreen
+			></iframe>
 		</div>
+		<div class="parallax-fade" aria-hidden="true"></div>
+		<button id="prevBtn" class="side-arrow left" type="button" aria-label="Previous repository">&#8249;</button>
+		<div id="playerPanel" class="parallax-stage">
+			<h2 id="videoTitle" class="video-title">Loading repositories...</h2>
+			<div class="video-hint">Click the video surface to expand and play. Scroll away to pause and collapse.</div>
+		</div>
+		<div id="repoCarousel" class="repo-carousel" aria-label="Repository buttons"></div>
 		<button id="nextBtn" class="side-arrow right" type="button" aria-label="Next repository">&#8250;</button>
 	</section>
 
 	<section class="content">
 		<div class="content-shell">
-			<h2>Repository Video Carousel</h2>
-			<p>Hover cells to preview names. Click one to switch video and README.</p>
-			<div class="carousel-frame">
-				<div id="repoCarousel" class="repo-carousel" aria-label="Repository buttons"></div>
-			</div>
+			<h2>Repository Details</h2>
+			<p>Choose a cell from the player footer to switch video and README.</p>
 			<div id="repoMeta" class="repo-meta" aria-live="polite"></div>
 			<a id="repoLink" class="repo-link" href="#" target="_blank" rel="noopener noreferrer">Open repository</a>
 			<div id="readmeText" class="readme loading">Loading README...</div>
 		</div>
 	</section>
 
+	<div id="fogLayer" class="fog-layer" aria-hidden="true"></div>
+
 	<script>
 		const candidateUsers = ["hpipyT", "Hpipyt", "hpipy"];
 		const fallbackEmbedIds = ["dQw4w9WgXcQ", "ysz5S6PUM-U", "tgbNymZ7vqY"];
+		const SLIDE_SPEED_MS = 920;
 
 		const parallaxSection = document.getElementById("videoParallax");
+		const playerPanel = document.getElementById("playerPanel");
 		const videoTitle = document.getElementById("videoTitle");
 		const videoPlayer = document.getElementById("videoPlayer");
-		const videoOverlay = document.getElementById("videoOverlay");
 		const repoCarousel = document.getElementById("repoCarousel");
 		const repoMeta = document.getElementById("repoMeta");
 		const repoLink = document.getElementById("repoLink");
 		const readmeText = document.getElementById("readmeText");
-		const thumbReveal = document.getElementById("thumbReveal");
+		const fogLayer = document.getElementById("fogLayer");
 		const prevBtn = document.getElementById("prevBtn");
 		const nextBtn = document.getElementById("nextBtn");
 
 		const readmeCache = new Map();
 		const videoCache = new Map();
-		const thumbCache = new Map();
 		let current = 0;
 		let repoVideos = [];
 		let autoSnapCooldown = false;
 		let lastScrollY = window.scrollY;
 		let hoveredIndex = -1;
 		let renderToken = 0;
-		let isPlayerUnlocked = false;
+		let isExpanded = false;
 		let activeEmbedBase = "https://www.youtube.com/embed/dQw4w9WgXcQ";
 
 		function normalizeIndex(index) {
@@ -414,16 +411,10 @@
 		}
 
 		function buildEmbedUrl(base, autoplay) {
-			const suffix = autoplay ? "?autoplay=1&rel=0&modestbranding=1" : "?rel=0&modestbranding=1";
+			const suffix = autoplay
+				? "?autoplay=1&enablejsapi=1&playsinline=1&rel=0&modestbranding=1"
+				: "?enablejsapi=1&playsinline=1&rel=0&modestbranding=1";
 			return `${base}${suffix}`;
-		}
-
-		function thumbFromVideoId(videoId) {
-			return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-		}
-
-		function setParallaxThumb(url) {
-			parallaxSection.style.setProperty("--video-thumb", `url('${url}')`);
 		}
 
 		function escapeHtml(text) {
@@ -520,17 +511,60 @@
 			return embed;
 		}
 
-		async function resolveThumbnail(repo, index) {
-			const key = `${repo.owner}/${repo.name}`;
-			if (thumbCache.has(key)) {
-				return thumbCache.get(key);
+		function sendPlayerCommand(command) {
+			videoPlayer.contentWindow?.postMessage(
+				JSON.stringify({
+					event: "command",
+					func: command,
+					args: []
+				}),
+				"*"
+			);
+		}
+
+		function smoothScrollTo(targetY, duration = SLIDE_SPEED_MS) {
+			const startY = window.scrollY;
+			const delta = targetY - startY;
+			if (Math.abs(delta) < 2) {
+				return;
 			}
 
-			const embed = await resolveVideoEmbed(repo, index);
-			const videoId = parseEmbedVideoId(embed);
-			const thumb = videoId ? thumbFromVideoId(videoId) : "https://picsum.photos/1600/900?grayscale";
-			thumbCache.set(key, thumb);
-			return thumb;
+			const start = performance.now();
+			function tick(now) {
+				const t = Math.min(1, (now - start) / duration);
+				const eased = 1 - Math.pow(1 - t, 3);
+				window.scrollTo(0, startY + delta * eased);
+				if (t < 1) {
+					requestAnimationFrame(tick);
+				}
+			}
+			requestAnimationFrame(tick);
+		}
+
+		function centerPlayerInView() {
+			const panelRect = playerPanel.getBoundingClientRect();
+			const absoluteCenter = window.scrollY + panelRect.top + panelRect.height / 2;
+			const targetY = Math.max(0, absoluteCenter - window.innerHeight / 2);
+			smoothScrollTo(targetY, SLIDE_SPEED_MS);
+		}
+
+		function setExpandedState(nextExpanded) {
+			isExpanded = nextExpanded;
+			parallaxSection.classList.toggle("expanded", nextExpanded);
+		}
+
+		function pauseAndCollapse() {
+			if (!isExpanded) {
+				return;
+			}
+			sendPlayerCommand("pauseVideo");
+			setExpandedState(false);
+		}
+
+		function expandAndPlay() {
+			setExpandedState(true);
+			centerPlayerInView();
+			videoPlayer.src = buildEmbedUrl(activeEmbedBase, true);
 		}
 
 		async function render() {
@@ -551,8 +585,6 @@
 
 			readmeText.classList.add("loading");
 			readmeText.textContent = "Loading README...";
-			videoOverlay.classList.remove("fade-out");
-			isPlayerUnlocked = false;
 
 			const embed = await resolveVideoEmbed(active, current);
 			if (token !== renderToken) {
@@ -560,14 +592,8 @@
 			}
 
 			activeEmbedBase = embed;
-			videoPlayer.src = buildEmbedUrl(activeEmbedBase, false);
+			videoPlayer.src = buildEmbedUrl(activeEmbedBase, isExpanded);
 			videoPlayer.title = `${active.name} video`;
-
-			const thumb = await resolveThumbnail(active, current);
-			if (token !== renderToken) {
-				return;
-			}
-			setParallaxThumb(thumb);
 
 			const readme = await getReadme(active);
 			if (token !== renderToken) {
@@ -600,17 +626,28 @@
 			}
 
 			const rect = parallaxSection.getBoundingClientRect();
-			const inThreshold = rect.top <= window.innerHeight * 0.62 && rect.top >= window.innerHeight * 0.35;
+			const inThreshold = rect.top <= window.innerHeight * 0.72 && rect.top >= window.innerHeight * 0.46;
 			if (inThreshold) {
 				autoSnapCooldown = true;
 				const stageRect = stage.getBoundingClientRect();
 				const absoluteStageCenter = window.scrollY + stageRect.top + stageRect.height / 2;
 				const targetY = Math.max(0, absoluteStageCenter - window.innerHeight / 2);
-				window.scrollTo({ top: targetY, behavior: "smooth" });
+				smoothScrollTo(targetY, SLIDE_SPEED_MS);
 				setTimeout(() => {
 					autoSnapCooldown = false;
-				}, 1050);
+				}, SLIDE_SPEED_MS + 140);
 			}
+		}
+
+		function updateFogOpacity() {
+			const fadeDistance = window.innerHeight * 0.95;
+			const opacity = Math.max(0, 0.86 - window.scrollY / fadeDistance);
+			fogLayer.style.opacity = opacity.toFixed(3);
+		}
+
+		function onScrollEffects() {
+			snapToParallaxOnThreshold();
+			updateFogOpacity();
 		}
 
 		function renderButtons() {
@@ -636,6 +673,7 @@
 
 				button.addEventListener("click", () => {
 					current = Number(button.dataset.index);
+					hoveredIndex = -1;
 					render();
 				});
 			});
@@ -688,29 +726,44 @@
 		}
 
 		function unlockAndPlay() {
-			if (isPlayerUnlocked) {
-				return;
-			}
-			isPlayerUnlocked = true;
-			videoOverlay.classList.add("fade-out");
-			videoPlayer.src = buildEmbedUrl(activeEmbedBase, true);
+			expandAndPlay();
 		}
 
-		parallaxSection.addEventListener("mousemove", (event) => {
-			const rect = parallaxSection.getBoundingClientRect();
-			const x = ((event.clientX - rect.left) / rect.width) * 100;
-			const y = ((event.clientY - rect.top) / rect.height) * 100;
-			parallaxSection.style.setProperty("--mouse-x", `${x}%`);
-			parallaxSection.style.setProperty("--mouse-y", `${y}%`);
+		const sectionObserver = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.target === parallaxSection && entry.intersectionRatio < 0.32) {
+						pauseAndCollapse();
+					}
+				});
+			},
+			{ threshold: [0, 0.15, 0.32, 0.55, 0.8] }
+		);
+		sectionObserver.observe(parallaxSection);
+
+		parallaxSection.addEventListener("click", (event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) {
+				return;
+			}
+			if (target.closest(".repo-button") || target.closest(".side-arrow") || target.closest(".repo-link")) {
+				return;
+			}
+			expandAndPlay();
 		});
 
-		videoOverlay.addEventListener("click", unlockAndPlay);
-
-		prevBtn.addEventListener("click", () => move(-1));
-		nextBtn.addEventListener("click", () => move(1));
-		window.addEventListener("scroll", snapToParallaxOnThreshold, { passive: true });
+		prevBtn.addEventListener("click", (event) => {
+			event.stopPropagation();
+			move(-1);
+		});
+		nextBtn.addEventListener("click", (event) => {
+			event.stopPropagation();
+			move(1);
+		});
+		window.addEventListener("scroll", onScrollEffects, { passive: true });
 
 		loadRepos();
+		updateFogOpacity();
 	</script>
 
 </body>
