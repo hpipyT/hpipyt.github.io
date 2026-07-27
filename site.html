@@ -216,7 +216,7 @@
 		<div class="content-shell">
 			<aside class="repo-panel" aria-label="Repository stack">
 				<h2>Featured Repositories</h2>
-				<p>Three repos rotate as you move through the videos.</p>
+				<p>Live repos from hpipyT. Carousel rotates this 3-item stack.</p>
 				<ul id="repoStack" class="repo-stack"></ul>
 			</aside>
 
@@ -242,26 +242,13 @@
 	</section>
 
 	<script>
-		const repoVideos = [
-			{
-				name: "repo-one",
-				description: "Replace with your first repository and project trailer.",
-				repoUrl: "https://github.com/your-name/repo-one",
-				youtubeEmbed: "https://www.youtube.com/embed/dQw4w9WgXcQ"
-			},
-			{
-				name: "repo-two",
-				description: "Replace with your second repository and demo walkthrough.",
-				repoUrl: "https://github.com/your-name/repo-two",
-				youtubeEmbed: "https://www.youtube.com/embed/ysz5S6PUM-U"
-			},
-			{
-				name: "repo-three",
-				description: "Replace with your third repository and release video.",
-				repoUrl: "https://github.com/your-name/repo-three",
-				youtubeEmbed: "https://www.youtube.com/embed/tgbNymZ7vqY"
-			}
-		];
+		const githubUser = "hpipyT";
+		const fallbackEmbedIds = ["dQw4w9WgXcQ", "ysz5S6PUM-U", "tgbNymZ7vqY"];
+		const repoVideoOverrides = {
+			"hpipyt.github.io": "dQw4w9WgXcQ",
+			"runescape-burglar": "ysz5S6PUM-U",
+			"LAMP-stack-app-COP4331": "tgbNymZ7vqY"
+		};
 
 		const repoStack = document.getElementById("repoStack");
 		const videoPlayer = document.getElementById("videoPlayer");
@@ -270,6 +257,7 @@
 		const nextBtn = document.getElementById("nextBtn");
 
 		let current = 0;
+		let repoVideos = [];
 
 		function normalizeIndex(index) {
 			const total = repoVideos.length;
@@ -284,7 +272,38 @@
 			];
 		}
 
+		function embedFromVideoId(videoId) {
+			return `https://www.youtube.com/embed/${videoId}`;
+		}
+
+		function fallbackData() {
+			repoVideos = [
+				{
+					name: "hpipyt.github.io",
+					description: "GitHub Pages site repository",
+					repoUrl: "https://github.com/hpipyT/hpipyt.github.io",
+					youtubeEmbed: embedFromVideoId(fallbackEmbedIds[0])
+				},
+				{
+					name: "runescape-burglar",
+					description: "Project repository",
+					repoUrl: "https://github.com/hpipyT/runescape-burglar",
+					youtubeEmbed: embedFromVideoId(fallbackEmbedIds[1])
+				},
+				{
+					name: "LAMP-stack-app-COP4331",
+					description: "Project repository",
+					repoUrl: "https://github.com/hpipyT/LAMP-stack-app-COP4331",
+					youtubeEmbed: embedFromVideoId(fallbackEmbedIds[2])
+				}
+			];
+		}
+
 		function render() {
+			if (!repoVideos.length) {
+				return;
+			}
+
 			const active = repoVideos[current];
 			videoPlayer.src = active.youtubeEmbed;
 			videoPlayer.title = `${active.name} video`;
@@ -308,14 +327,52 @@
 		}
 
 		function move(step) {
+			if (!repoVideos.length) {
+				return;
+			}
 			current = normalizeIndex(current + step);
+			render();
+		}
+
+		async function loadRepos() {
+			try {
+				const response = await fetch(`https://api.github.com/users/${githubUser}/repos?sort=updated&per_page=50`);
+				if (!response.ok) {
+					throw new Error("Failed to load repositories");
+				}
+
+				const repos = await response.json();
+				const topRepos = repos
+					.filter((repo) => !repo.fork)
+					.slice(0, 3);
+
+				if (topRepos.length < 3) {
+					fallbackData();
+					render();
+					return;
+				}
+
+				repoVideos = topRepos.map((repo, index) => {
+					const override = repoVideoOverrides[repo.name];
+					const videoId = override || fallbackEmbedIds[index % fallbackEmbedIds.length];
+					return {
+						name: repo.name,
+						description: repo.description || "Repository from GitHub profile",
+						repoUrl: repo.html_url,
+						youtubeEmbed: embedFromVideoId(videoId)
+					};
+				});
+			} catch (error) {
+				fallbackData();
+			}
+
 			render();
 		}
 
 		prevBtn.addEventListener("click", () => move(-1));
 		nextBtn.addEventListener("click", () => move(1));
 
-		render();
+		loadRepos();
 	</script>
 
 </body>
