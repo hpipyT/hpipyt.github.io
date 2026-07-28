@@ -36,6 +36,17 @@
 		overflow: hidden;
 	}
 
+	.hero-placeholder {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		filter: saturate(0.9) contrast(1.04) brightness(0.9);
+		z-index: 0;
+		pointer-events: none;
+	}
+
 	.hero-copy {
 		position: relative;
 		z-index: 2;
@@ -316,6 +327,7 @@
 </head>
 <body>
 	<section class="hero">
+		<img id="heroPlaceholder" class="hero-placeholder" alt="" aria-hidden="true" />
 		<div id="tessellationLayer" class="tessellation-layer" aria-hidden="true"></div>
 		<div class="hero-copy">
 			<h1>Parallax Scroll Effect</h1>
@@ -364,6 +376,7 @@
 			"tessellation.png",
 			"tessellation.jpg"
 		];
+		const HERO_PLACEHOLDER_DATA_URL = buildHeroPlaceholderDataUrl();
 
 		const parallaxSection = document.getElementById("videoParallax");
 		const videoPlayer = document.getElementById("videoPlayer");
@@ -374,8 +387,13 @@
 		const tessellationLayer = document.getElementById("tessellationLayer");
 		const parallaxShardLayer = document.getElementById("parallaxShardLayer");
 		const heroSection = document.querySelector(".hero");
+		const heroPlaceholder = document.getElementById("heroPlaceholder");
 		const prevBtn = document.getElementById("prevBtn");
 		const nextBtn = document.getElementById("nextBtn");
+
+		if (heroPlaceholder) {
+			heroPlaceholder.src = HERO_PLACEHOLDER_DATA_URL;
+		}
 
 		const readmeCache = new Map();
 		const videoCache = new Map();
@@ -676,7 +694,7 @@
 				return;
 			}
 			const drift = Math.abs(window.scrollY - expandedLockScrollY);
-			if (drift > 0.1) {
+			if (drift > 7) {
 				pauseAndCollapse();
 			}
 		}
@@ -695,6 +713,65 @@
 
 		function clamp(value, min, max) {
 			return Math.max(min, Math.min(max, value));
+		}
+
+		function buildHeroPlaceholderDataUrl() {
+			const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff3d8"/><stop offset="45%" stop-color="#f6bc79"/><stop offset="100%" stop-color="#91562a"/></linearGradient><radialGradient id="sun" cx="0.82" cy="0.2" r="0.35"><stop offset="0%" stop-color="#fff6d8" stop-opacity="0.95"/><stop offset="100%" stop-color="#fff6d8" stop-opacity="0"/></radialGradient></defs><rect width="1600" height="900" fill="url(#g)"/><rect width="1600" height="900" fill="url(#sun)"/><path d="M0 640 C220 520 390 700 610 620 C820 545 1010 740 1260 640 C1380 595 1490 615 1600 590 L1600 900 L0 900 Z" fill="#d7924e"/><path d="M0 710 C260 610 430 760 650 705 C910 642 1100 810 1600 695 L1600 900 L0 900 Z" fill="#7f4b23"/><circle cx="420" cy="250" r="86" fill="#fff2cc" fill-opacity="0.5"/></svg>`;
+			return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+		}
+
+		function drawProceduralPlaceholder(ctx, w, h) {
+			const g = ctx.createLinearGradient(0, 0, w, h);
+			g.addColorStop(0, "#fff3d8");
+			g.addColorStop(0.45, "#f6bc79");
+			g.addColorStop(1, "#91562a");
+			ctx.fillStyle = g;
+			ctx.fillRect(0, 0, w, h);
+
+			ctx.globalAlpha = 0.42;
+			ctx.fillStyle = "#fff4d0";
+			ctx.beginPath();
+			ctx.arc(w * 0.8, h * 0.22, Math.min(w, h) * 0.12, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.globalAlpha = 1;
+
+			ctx.fillStyle = "#d7924e";
+			ctx.beginPath();
+			ctx.moveTo(0, h * 0.71);
+			ctx.bezierCurveTo(w * 0.14, h * 0.57, w * 0.28, h * 0.77, w * 0.43, h * 0.69);
+			ctx.bezierCurveTo(w * 0.58, h * 0.61, w * 0.76, h * 0.82, w, h * 0.66);
+			ctx.lineTo(w, h);
+			ctx.lineTo(0, h);
+			ctx.closePath();
+			ctx.fill();
+
+			ctx.fillStyle = "#7f4b23";
+			ctx.beginPath();
+			ctx.moveTo(0, h * 0.79);
+			ctx.bezierCurveTo(w * 0.18, h * 0.69, w * 0.34, h * 0.82, w * 0.52, h * 0.75);
+			ctx.bezierCurveTo(w * 0.7, h * 0.69, w * 0.83, h * 0.87, w, h * 0.77);
+			ctx.lineTo(w, h);
+			ctx.lineTo(0, h);
+			ctx.closePath();
+			ctx.fill();
+		}
+
+		function getHeroTextureData(w, h) {
+			const textureCanvas = document.createElement("canvas");
+			textureCanvas.width = w;
+			textureCanvas.height = h;
+			const textureCtx = textureCanvas.getContext("2d", { willReadFrequently: true });
+			if (!textureCtx) {
+				return null;
+			}
+
+			if (heroPlaceholder && heroPlaceholder.complete && heroPlaceholder.naturalWidth > 0) {
+				textureCtx.drawImage(heroPlaceholder, 0, 0, w, h);
+			} else {
+				drawProceduralPlaceholder(textureCtx, w, h);
+			}
+
+			return textureCtx.getImageData(0, 0, w, h).data;
 		}
 
 		function buildFallbackTessellation() {
@@ -751,6 +828,11 @@
 			srcCtx.drawImage(img, 0, 0, w, h);
 			const srcImage = srcCtx.getImageData(0, 0, w, h);
 			const srcData = srcImage.data;
+			const textureData = getHeroTextureData(w, h);
+			if (!textureData) {
+				buildFallbackTessellation();
+				return;
+			}
 			const size = w * h;
 			const boundary = new Uint8Array(size);
 			const visited = new Uint8Array(size);
@@ -891,10 +973,10 @@
 
 						const srcI = (gy * w + gx) * 4;
 						const outI = li * 4;
-						pieceData[outI] = srcData[srcI];
-						pieceData[outI + 1] = srcData[srcI + 1];
-						pieceData[outI + 2] = srcData[srcI + 2];
-						pieceData[outI + 3] = 255;
+						pieceData[outI] = textureData[srcI];
+						pieceData[outI + 1] = textureData[srcI + 1];
+						pieceData[outI + 2] = textureData[srcI + 2];
+						pieceData[outI + 3] = textureData[srcI + 3] || 255;
 					}
 				}
 
@@ -966,8 +1048,10 @@
 				return;
 			}
 
-			const rect = heroSection.getBoundingClientRect();
-			const progress = clamp(-rect.top / heroSection.offsetHeight, 0, 1);
+			const startY = heroSection.offsetTop;
+			const focusY = parallaxSection.offsetTop + parallaxSection.offsetHeight / 2 - window.innerHeight / 2;
+			const duration = Math.max(1, focusY - startY);
+			const progress = clamp((window.scrollY - startY) / duration, 0, 1);
 
 			tessellationPieces.forEach((piece) => {
 				const delay = (1 - piece.yNorm) * 0.58;
