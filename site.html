@@ -119,19 +119,6 @@
 		pointer-events: none;
 	}
 
-	.parallax-stage {
-		width: min(1080px, 100%);
-		background: rgb(15 23 42 / 0.52);
-		border: 1px solid rgb(255 255 255 / 0.18);
-		border-radius: 0.85rem;
-		padding: 0.95rem 1rem;
-		backdrop-filter: blur(4px);
-		box-shadow: 0 18px 44px rgb(0 0 0 / 0.3);
-		position: relative;
-		z-index: 2;
-		cursor: pointer;
-	}
-
 	.video-title {
 		margin: 0 0 0.55rem;
 		color: #fff;
@@ -349,7 +336,6 @@
 		<div class="parallax-fade" aria-hidden="true"></div>
 		<div id="parallaxShardLayer" class="tessellation-layer parallax-shard-layer" aria-hidden="true"></div>
 		<button id="prevBtn" class="side-arrow left" type="button" aria-label="Previous repository">&#8249;</button>
-		<div id="playerPanel" class="parallax-stage" aria-hidden="true"></div>
 		<div id="repoCarousel" class="repo-carousel" aria-label="Repository buttons"></div>
 		<button id="nextBtn" class="side-arrow right" type="button" aria-label="Next repository">&#8250;</button>
 	</section>
@@ -368,10 +354,18 @@
 		const candidateUsers = ["hpipyT", "Hpipyt", "hpipy"];
 		const fallbackEmbedIds = ["dQw4w9WgXcQ", "ysz5S6PUM-U", "tgbNymZ7vqY"];
 		const SLIDE_SPEED_MS = 920;
-		const TESSELLATION_IMAGE_CANDIDATES = ["assets/images/tesellation.png", "assets/images/tesellation.jpg", "tesellation.png", "tesellation.jpg"];
+		const TESSELLATION_IMAGE_CANDIDATES = [
+			"assets/images/tesellation.png",
+			"assets/images/tesellation.jpg",
+			"assets/images/tessellation.png",
+			"assets/images/tessellation.jpg",
+			"tesellation.png",
+			"tesellation.jpg",
+			"tessellation.png",
+			"tessellation.jpg"
+		];
 
 		const parallaxSection = document.getElementById("videoParallax");
-		const playerPanel = document.getElementById("playerPanel");
 		const videoPlayer = document.getElementById("videoPlayer");
 		const repoCarousel = document.getElementById("repoCarousel");
 		const repoMeta = document.getElementById("repoMeta");
@@ -682,7 +676,7 @@
 				return;
 			}
 			const drift = Math.abs(window.scrollY - expandedLockScrollY);
-			if (drift > 7) {
+			if (drift > 0.1) {
 				pauseAndCollapse();
 			}
 		}
