@@ -62,6 +62,10 @@
 		overflow: hidden;
 	}
 
+	.parallax-shard-layer {
+		z-index: 4;
+	}
+
 	.tess-piece {
 		position: absolute;
 		image-rendering: auto;
@@ -342,6 +346,7 @@
 			></iframe>
 		</div>
 		<div class="parallax-fade" aria-hidden="true"></div>
+		<div id="parallaxShardLayer" class="tessellation-layer parallax-shard-layer" aria-hidden="true"></div>
 		<button id="prevBtn" class="side-arrow left" type="button" aria-label="Previous repository">&#8249;</button>
 		<div id="repoCarousel" class="repo-carousel" aria-label="Repository buttons"></div>
 		<button id="nextBtn" class="side-arrow right" type="button" aria-label="Next repository">&#8250;</button>
@@ -380,6 +385,7 @@
 		const repoLink = document.getElementById("repoLink");
 		const readmeText = document.getElementById("readmeText");
 		const tessellationLayer = document.getElementById("tessellationLayer");
+		const parallaxShardLayer = document.getElementById("parallaxShardLayer");
 		const heroSection = document.querySelector(".hero");
 		const heroPlaceholder = document.getElementById("heroPlaceholder");
 		const prevBtn = document.getElementById("prevBtn");
@@ -699,6 +705,9 @@
 			}
 
 			tessellationLayer.innerHTML = "";
+			if (parallaxShardLayer) {
+				parallaxShardLayer.innerHTML = "";
+			}
 			tessellationPieces.length = 0;
 		}
 
@@ -780,9 +789,15 @@
 					piece.style.height = `${100 / rows}%`;
 					piece.style.background = "rgb(255 255 255 / 0.95)";
 					piece.style.border = "1px solid rgb(0 0 0 / 0.7)";
+					const overlay = piece.cloneNode(true);
+					if (parallaxShardLayer) {
+						parallaxShardLayer.appendChild(overlay);
+					}
 					tessellationLayer.appendChild(piece);
 					tessellationPieces.push({
 						heroEl: piece,
+						parallaxEl: overlay,
+						parallaxBaseRatio: row / rows,
 						yNorm: (row + 0.5) / rows,
 						jitter: ((row * cols + col) % 11) / 10
 					});
@@ -973,9 +988,27 @@
 				pieceCanvas.style.width = `${(boxW / w) * 100}%`;
 				pieceCanvas.style.height = `${(boxH / h) * 100}%`;
 
+				const overlayCanvas = document.createElement("canvas");
+				overlayCanvas.width = boxW;
+				overlayCanvas.height = boxH;
+				overlayCanvas.className = "tess-piece";
+				overlayCanvas.style.left = pieceCanvas.style.left;
+				overlayCanvas.style.top = pieceCanvas.style.top;
+				overlayCanvas.style.width = pieceCanvas.style.width;
+				overlayCanvas.style.height = pieceCanvas.style.height;
+				const octx = overlayCanvas.getContext("2d");
+				if (octx) {
+					octx.drawImage(pieceCanvas, 0, 0);
+				}
+				if (parallaxShardLayer) {
+					parallaxShardLayer.appendChild(overlayCanvas);
+				}
+
 				tessellationLayer.appendChild(pieceCanvas);
 				tessellationPieces.push({
 					heroEl: pieceCanvas,
+					parallaxEl: overlayCanvas,
+					parallaxBaseRatio: clamp((comp.minY - pad) / h, 0, 1),
 					yNorm: comp.yNorm,
 					jitter: ((i * 37) % 100) / 100
 				});
@@ -1021,6 +1054,8 @@
 			const focusY = parallaxSection.offsetTop + parallaxSection.offsetHeight / 2 - window.innerHeight / 2;
 			const duration = Math.max(1, focusY - startY);
 			const progress = clamp((window.scrollY - startY) / duration, 0, 1);
+			const parallaxRect = parallaxSection.getBoundingClientRect();
+			const viewportBottomInParallax = clamp(window.innerHeight - parallaxRect.top, 0, parallaxSection.offsetHeight);
 
 			tessellationPieces.forEach((piece) => {
 				const delay = (1 - piece.yNorm) * 0.58;
@@ -1031,6 +1066,17 @@
 				const rotate = (piece.jitter - 0.5) * 9 * local;
 				piece.heroEl.style.transform = `translate(${sway}px, ${drop}px) rotate(${rotate}deg)`;
 				piece.heroEl.style.opacity = String(1 - local * 0.98);
+
+				if (piece.parallaxEl) {
+					const baseY = (piece.parallaxBaseRatio || 0) * parallaxSection.offsetHeight;
+					const startAbove = -parallaxSection.offsetHeight * (0.55 + piece.jitter * 0.18);
+					const endY = viewportBottomInParallax - baseY + 18 + piece.jitter * 40;
+					const overlayY = startAbove + local * (endY - startAbove);
+					const overlayRotate = rotate * 0.82;
+					const overlayOpacity = clamp(local * 1.25, 0, 0.88);
+					piece.parallaxEl.style.transform = `translate(${sway * 0.72}px, ${overlayY}px) rotate(${overlayRotate}deg)`;
+					piece.parallaxEl.style.opacity = String(overlayOpacity);
+				}
 			});
 		}
 
